@@ -90,7 +90,7 @@ int main(int argc, char *argv[])
     cmd.AddValue ("key","memory block key",memblock_key);
     cmd.Parse (argc, argv);
     APB apb(memblock_key);
-    std::cout << a << "+" << b << "=" << apb.Func(a, b) << std::endl;
+    std::cout << a << "+" << b << "=" << apb.Func(a, b) << "hello" << std::endl;
     apb.SetFinish();
     return 0;
 }
