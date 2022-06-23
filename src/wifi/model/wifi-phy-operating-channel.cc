@@ -261,7 +261,14 @@ const std::set<FrequencyChannelInfo> WifiPhyOperatingChannel::m_frequencyChannel
   { std::make_tuple (111, 6495, 160, WIFI_PHY_OFDM_CHANNEL, WIFI_PHY_BAND_6GHZ) },
   { std::make_tuple (143, 6655, 160, WIFI_PHY_OFDM_CHANNEL, WIFI_PHY_BAND_6GHZ) },
   { std::make_tuple (175, 6815, 160, WIFI_PHY_OFDM_CHANNEL, WIFI_PHY_BAND_6GHZ) },
-  { std::make_tuple (207, 6975, 160, WIFI_PHY_OFDM_CHANNEL, WIFI_PHY_BAND_6GHZ) }
+  { std::make_tuple (207, 6975, 160, WIFI_PHY_OFDM_CHANNEL, WIFI_PHY_BAND_6GHZ) },
+  //802.11 ah see 802.11ah standard annex E
+    { std::make_tuple (68, 902, 1, WIFI_PHY_OFDM_CHANNEL, WIFI_PHY_BAND_S1GHZ) },
+    { std::make_tuple (69, 902, 2, WIFI_PHY_OFDM_CHANNEL, WIFI_PHY_BAND_S1GHZ) },
+    { std::make_tuple (70, 902, 4, WIFI_PHY_OFDM_CHANNEL, WIFI_PHY_BAND_S1GHZ) },
+    { std::make_tuple (71, 902, 8, WIFI_PHY_OFDM_CHANNEL, WIFI_PHY_BAND_S1GHZ) },
+    { std::make_tuple (72, 902, 16, WIFI_PHY_OFDM_CHANNEL, WIFI_PHY_BAND_S1GHZ) },
+
 };
 
 WifiPhyOperatingChannel::WifiPhyOperatingChannel ()

@@ -42,6 +42,12 @@ ConvertGuardIntervalToNanoSeconds (WifiMode mode, const Ptr<WifiNetDevice> devic
       NS_ASSERT (htConfiguration); //If HT/VHT modulation is used, we should have a HT configuration attached
       gi = htConfiguration->GetShortGuardIntervalSupported () ? 400 : 800;
     }
+  else if (mode.GetModulationClass () == WIFI_MOD_CLASS_S1G)
+  {
+//      Ptr<GetS1gConfiguration> s1gConfiguration = device->GetS1gConfiguration ();
+//      NS_ASSERT (GetS1gConfiguration); //If S1G modulation is used, we should have a S1G configuration attached
+      gi = 8000; // TODO::Zhouyou: add support for short guard interval
+  }
   return gi;
 }
 
@@ -57,10 +63,13 @@ ConvertGuardIntervalToNanoSeconds (WifiMode mode, bool htShortGuardInterval, Tim
     {
       gi = htShortGuardInterval ? 400 : 800;
     }
-  else
-    {
+  else if (mode.GetModulationClass () == WIFI_MOD_CLASS_S1G)
+  {
+      gi = 8000; // TODO::Zhouyou: add support for short guard interval
+  }
+  else{
       gi = 800;
-    }
+  }
   return gi;
 }
 
@@ -73,6 +82,11 @@ GetChannelWidthForTransmission (WifiMode mode, uint16_t maxAllowedChannelWidth)
           || modulationClass == WifiModulationClass::WIFI_MOD_CLASS_ERP_OFDM)) // special case of beacons at 2.4 GHz
     {
       return 20;
+    }
+  if (maxAllowedChannelWidth > 16
+        && (modulationClass == WifiModulationClass::WIFI_MOD_CLASS_S1G)) // S1G max channel width is 16
+    {
+        return 16;
     }
   //at 2.4 GHz basic rate can be non-ERP DSSS
   if (modulationClass == WifiModulationClass::WIFI_MOD_CLASS_DSSS
@@ -110,6 +124,17 @@ GetPreambleForTransmission (WifiModulationClass modulation, bool useShortPreambl
     {
       return WIFI_PREAMBLE_SHORT;
     }
+  else if (modulation == WIFI_MOD_CLASS_S1G) //S1G preamble
+  {
+      if(useShortPreamble)
+      {
+          return WIFI_PREAMBLE_S1G_SHORT;
+      }
+      else
+      {
+          return WIFI_PREAMBLE_S1G_LONG;
+      }
+  }
   else
     {
       return WIFI_PREAMBLE_LONG;
@@ -129,6 +154,8 @@ IsAllowedControlAnswerModulationClass (WifiModulationClass modClassReq, WifiModu
       return (modClassAnswer == WIFI_MOD_CLASS_DSSS || modClassAnswer == WIFI_MOD_CLASS_HR_DSSS || modClassAnswer == WIFI_MOD_CLASS_ERP_OFDM);
     case WIFI_MOD_CLASS_OFDM:
       return (modClassAnswer == WIFI_MOD_CLASS_OFDM);
+    case WIFI_MOD_CLASS_S1G:
+      return (modClassAnswer == WIFI_MOD_CLASS_S1G);
     case WIFI_MOD_CLASS_HT:
     case WIFI_MOD_CLASS_VHT:
     case WIFI_MOD_CLASS_HE:

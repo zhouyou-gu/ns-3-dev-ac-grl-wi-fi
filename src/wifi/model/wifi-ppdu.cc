@@ -119,6 +119,7 @@ WifiPpdu::CanBeReceived (uint16_t txCenterFreq, uint16_t p20MinFreq,
   if (minTxFreq > p20MinFreq || maxTxFreq < p20MaxFreq)
     {
       NS_LOG_INFO ("Received PPDU does not overlap with the primary20 channel");
+      NS_LOG_INFO ("minTxFreq;p20MinFreq;maxTxFreq;p20MaxFreq:\t"<< minTxFreq << ";" << p20MinFreq << ";" <<  maxTxFreq << ";" << p20MaxFreq);
       return false;
     }
   return true;

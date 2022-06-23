@@ -49,6 +49,8 @@ set(source_files
     model/ht/ht-operation.cc
     model/ht/ht-phy.cc
     model/ht/ht-ppdu.cc
+        model/s1g/s1g-ofdm-phy.cc
+        model/s1g/s1g-ofdm-ppdu.cc
     model/interference-helper.cc
     model/mac-rx-middle.cc
     model/mac-tx-middle.cc
@@ -183,6 +185,8 @@ set(header_files
     model/ht/ht-operation.h
     model/ht/ht-phy.h
     model/ht/ht-ppdu.h
+        model/s1g/s1g-ofdm-phy.h
+        model/s1g/s1g-ofdm-ppdu.h
     model/interference-helper.h
     model/mac-rx-middle.h
     model/mac-tx-middle.h

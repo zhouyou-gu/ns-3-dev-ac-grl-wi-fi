@@ -31,6 +31,8 @@ namespace ns3 {
  */
 enum WifiPhyBand
 {
+  /** The sub 1 GHz band */
+  WIFI_PHY_BAND_S1GHZ,
   /** The 2.4 GHz band */
   WIFI_PHY_BAND_2_4GHZ,
   /** The 5 GHz band */

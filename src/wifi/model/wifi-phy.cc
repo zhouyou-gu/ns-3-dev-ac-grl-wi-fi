@@ -41,6 +41,7 @@
 #include "ns3/dsss-phy.h"
 #include "ns3/erp-ofdm-phy.h"
 #include "ns3/he-phy.h" //includes OFDM, HT, and VHT
+#include "s1g/s1g-ofdm-phy.h"
 
 namespace ns3 {
 
@@ -81,6 +82,7 @@ WifiPhy::GetTypeId (void)
                       MakeEnumChecker (WifiPhyBand::WIFI_PHY_BAND_2_4GHZ, "BAND_2_4GHZ",
                                        WifiPhyBand::WIFI_PHY_BAND_5GHZ, "BAND_5GHZ",
                                        WifiPhyBand::WIFI_PHY_BAND_6GHZ, "BAND_6GHZ",
+                                       WifiPhyBand::WIFI_PHY_BAND_S1GHZ, "BAND_S1GHZ",
                                        WifiPhyBand::WIFI_PHY_BAND_UNSPECIFIED, "BAND_UNSPECIFIED"),
                       MakeUintegerChecker<uint8_t> (0, 7)))
     .AddAttribute ("Frequency",
@@ -815,6 +817,14 @@ WifiPhy::Configure80211ax (void)
 }
 
 void
+WifiPhy::Configure80211ah (void)
+{
+  NS_LOG_FUNCTION (this);
+  NS_ASSERT(m_band == WIFI_PHY_BAND_S1GHZ);
+  AddPhyEntity (WIFI_MOD_CLASS_S1G, Create<S1gOfdmPhy> ());
+}
+
+void
 WifiPhy::ConfigureStandard (WifiStandard standard)
 {
   NS_LOG_FUNCTION (this << standard);
@@ -858,6 +868,9 @@ WifiPhy::ConfigureStandard (WifiStandard standard)
       break;
     case WIFI_STANDARD_80211ax:
       Configure80211ax ();
+      break;
+    case WIFI_STANDARD_80211ah:
+      Configure80211ah ();
       break;
     case WIFI_STANDARD_UNSPECIFIED:
     default:

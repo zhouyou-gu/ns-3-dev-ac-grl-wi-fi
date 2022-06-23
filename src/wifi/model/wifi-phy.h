@@ -1203,6 +1203,11 @@ private:
    */
   void Configure80211ax (void);
   /**
+   * Configure WifiPhy with appropriate channel frequency and
+   * supported rates for 802.11ah standard.
+   */
+  void Configure80211ah (void);
+  /**
    * Configure the device MCS set with the appropriate HtMcs modes for
    * the number of available transmit spatial streams
    */
