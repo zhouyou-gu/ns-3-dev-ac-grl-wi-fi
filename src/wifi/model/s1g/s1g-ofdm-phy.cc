@@ -34,60 +34,73 @@ NS_LOG_COMPONENT_DEFINE ("S1gOfdmPhy");
 /*******************************************************
 *       S1G PHY (IEEE 802.11-2016, clause 18)
 *******************************************************/
-
+/* *NS_CHECK_STYLE_OFF* */
+const PhyEntity::PpduFormats S1gOfdmPhy::m_ofdmPpduFormats {
+    { WIFI_PREAMBLE_S1G_LONG, { WIFI_PPDU_FIELD_PREAMBLE,      //STF + LTF
+                                      WIFI_PPDU_FIELD_SIG_A, //SIG-A
+                                      WIFI_PPDU_FIELD_SIG_B, //SIG-A
+                            WIFI_PPDU_FIELD_DATA } },
+    { WIFI_PREAMBLE_S1G_SHORT, { WIFI_PPDU_FIELD_PREAMBLE,      //STF + LTF
+                            WIFI_PPDU_FIELD_NON_HT_HEADER, //SIG
+                            WIFI_PPDU_FIELD_DATA } },
+    { WIFI_PREAMBLE_S1G_1M, { WIFI_PPDU_FIELD_PREAMBLE,      //STF + LTF
+                            WIFI_PPDU_FIELD_NON_HT_HEADER, //SIG
+                            WIFI_PPDU_FIELD_DATA } }
+};
 /* *NS_CHECK_STYLE_OFF* */
 const PhyEntity::ModulationLookupTable S1gOfdmPhy::m_s1gOfdmModulationLookupTable {
         // Unique name           Code rate           Constellation size
-    {"OfdmRate0_30MbpsBW1MHz",	{WIFI_CODE_RATE_1_2,	2}},
-    {"OfdmRate0_60MbpsBW1MHz",	{WIFI_CODE_RATE_1_2,	4}},
-    {"OfdmRate0_90MbpsBW1MHz",	{WIFI_CODE_RATE_3_4,	4}},
-    {"OfdmRate1_20MbpsBW1MHz",	{WIFI_CODE_RATE_1_2,	16}},
-    {"OfdmRate1_80MbpsBW1MHz",	{WIFI_CODE_RATE_3_4,	16}},
-    {"OfdmRate2_40MbpsBW1MHz",	{WIFI_CODE_RATE_3_4,	64}},
-    {"OfdmRate2_70MbpsBW1MHz",	{WIFI_CODE_RATE_3_4,	64}},
-    {"OfdmRate3_00MbpsBW1MHz",	{WIFI_CODE_RATE_5_6,	64}},
-    {"OfdmRate3_60MbpsBW1MHz",	{WIFI_CODE_RATE_3_4,	256}},
-    {"OfdmRate4_00MbpsBW1MHz",	{WIFI_CODE_RATE_5_6,	256}},
-    {"OfdmRate0_15MbpsBW1MHz",	{WIFI_CODE_RATE_1_2,	2}},
-    {"OfdmRate0_65MbpsBW2MHz",	{WIFI_CODE_RATE_1_2,	2}},
-    {"OfdmRate1_30MbpsBW2MHz",	{WIFI_CODE_RATE_1_2,	4}},
-    {"OfdmRate1_95MbpsBW2MHz",	{WIFI_CODE_RATE_3_4,	4}},
-    {"OfdmRate2_60MbpsBW2MHz",	{WIFI_CODE_RATE_1_2,	16}},
-    {"OfdmRate3_90MbpsBW2MHz",	{WIFI_CODE_RATE_3_4,	16}},
-    {"OfdmRate5_20MbpsBW2MHz",	{WIFI_CODE_RATE_3_4,	64}},
-    {"OfdmRate5_85MbpsBW2MHz",	{WIFI_CODE_RATE_3_4,	64}},
-    {"OfdmRate6_50MbpsBW2MHz",	{WIFI_CODE_RATE_5_6,	64}},
-    {"OfdmRate7_80MbpsBW2MHz",	{WIFI_CODE_RATE_3_4,	256}},
-    {"OfdmRate1_35MbpsBW4MHz",	{WIFI_CODE_RATE_1_2,	2}},
-    {"OfdmRate2_70MbpsBW4MHz",	{WIFI_CODE_RATE_1_2,	4}},
-    {"OfdmRate4_05MbpsBW4MHz",	{WIFI_CODE_RATE_3_4,	4}},
-    {"OfdmRate5_40MbpsBW4MHz",	{WIFI_CODE_RATE_1_2,	16}},
-    {"OfdmRate8_10MbpsBW4MHz",	{WIFI_CODE_RATE_3_4,	16}},
-    {"OfdmRate10_80MbpsBW4MHz",	{WIFI_CODE_RATE_3_4,	64}},
-    {"OfdmRate12_20MbpsBW4MHz",	{WIFI_CODE_RATE_3_4,	64}},
-    {"OfdmRate13_50MbpsBW4MHz",	{WIFI_CODE_RATE_5_6,	64}},
-    {"OfdmRate16_20MbpsBW4MHz",	{WIFI_CODE_RATE_3_4,	256}},
-    {"OfdmRate18_00MbpsBW4MHz",	{WIFI_CODE_RATE_5_6,	256}},
-    {"OfdmRate2_93MbpsBW8MHz",	{WIFI_CODE_RATE_1_2,	2}},
-    {"OfdmRate5_85MbpsBW8MHz",	{WIFI_CODE_RATE_1_2,	4}},
-    {"OfdmRate8_78MbpsBW8MHz",	{WIFI_CODE_RATE_3_4,	4}},
-    {"OfdmRate11_70MbpsBW8MHz",	{WIFI_CODE_RATE_1_2,	16}},
-    {"OfdmRate17_60MbpsBW8MHz",	{WIFI_CODE_RATE_3_4,	16}},
-    {"OfdmRate23_40MbpsBW8MHz",	{WIFI_CODE_RATE_3_4,	64}},
-    {"OfdmRate26_30MbpsBW8MHz",	{WIFI_CODE_RATE_3_4,	64}},
-    {"OfdmRate29_30MbpsBW8MHz",	{WIFI_CODE_RATE_5_6,	64}},
-    {"OfdmRate35_10MbpsBW8MHz",	{WIFI_CODE_RATE_3_4,	256}},
-    {"OfdmRate39_00MbpsBW8MHz",	{WIFI_CODE_RATE_5_6,	256}},
-    {"OfdmRate5_85MbpsBW16MHz",	{WIFI_CODE_RATE_1_2,	2}},
-    {"OfdmRate11_70MbpsBW16MHz",	{WIFI_CODE_RATE_1_2,	4}},
-    {"OfdmRate17_60MbpsBW16MHz",	{WIFI_CODE_RATE_3_4,	4}},
-    {"OfdmRate23_40MbpsBW16MHz",	{WIFI_CODE_RATE_1_2,	16}},
-    {"OfdmRate35_10MbpsBW16MHz",	{WIFI_CODE_RATE_3_4,	16}},
-    {"OfdmRate46_80MbpsBW16MHz",	{WIFI_CODE_RATE_3_4,	64}},
-    {"OfdmRate52_70MbpsBW16MHz",	{WIFI_CODE_RATE_3_4,	64}},
-    {"OfdmRate58_50MbpsBW16MHz",	{WIFI_CODE_RATE_5_6,	64}},
-    {"OfdmRate70_20MbpsBW16MHz",	{WIFI_CODE_RATE_3_4,	256}},
-    {"OfdmRate78_00MbpsBW16MHz",	{WIFI_CODE_RATE_5_6,	256}},
+      {"S1gOfdmRate0_30MbpsBW1MHz",	{WIFI_CODE_RATE_1_2,	2}},
+      {"S1gOfdmRate0_60MbpsBW1MHz",	{WIFI_CODE_RATE_1_2,	4}},
+      {"S1gOfdmRate0_90MbpsBW1MHz",	{WIFI_CODE_RATE_3_4,	4}},
+      {"S1gOfdmRate1_20MbpsBW1MHz",	{WIFI_CODE_RATE_1_2,	16}},
+      {"S1gOfdmRate1_80MbpsBW1MHz",	{WIFI_CODE_RATE_3_4,	16}},
+      {"S1gOfdmRate2_40MbpsBW1MHz",	{WIFI_CODE_RATE_3_4,	64}},
+      {"S1gOfdmRate2_70MbpsBW1MHz",	{WIFI_CODE_RATE_3_4,	64}},
+      {"S1gOfdmRate3_00MbpsBW1MHz",	{WIFI_CODE_RATE_5_6,	64}},
+      {"S1gOfdmRate3_60MbpsBW1MHz",	{WIFI_CODE_RATE_3_4,	256}},
+      {"S1gOfdmRate4_00MbpsBW1MHz",	{WIFI_CODE_RATE_5_6,	256}},
+      {"S1gOfdmRate0_15MbpsBW1MHz",	{WIFI_CODE_RATE_1_2,	2}},
+      {"S1gOfdmRate0_65MbpsBW2MHz",	{WIFI_CODE_RATE_1_2,	2}},
+      {"S1gOfdmRate1_30MbpsBW2MHz",	{WIFI_CODE_RATE_1_2,	4}},
+      {"S1gOfdmRate1_95MbpsBW2MHz",	{WIFI_CODE_RATE_3_4,	4}},
+      {"S1gOfdmRate2_60MbpsBW2MHz",	{WIFI_CODE_RATE_1_2,	16}},
+      {"S1gOfdmRate3_90MbpsBW2MHz",	{WIFI_CODE_RATE_3_4,	16}},
+      {"S1gOfdmRate5_20MbpsBW2MHz",	{WIFI_CODE_RATE_3_4,	64}},
+      {"S1gOfdmRate5_85MbpsBW2MHz",	{WIFI_CODE_RATE_3_4,	64}},
+      {"S1gOfdmRate6_50MbpsBW2MHz",	{WIFI_CODE_RATE_5_6,	64}},
+      {"S1gOfdmRate7_80MbpsBW2MHz",	{WIFI_CODE_RATE_3_4,	256}},
+      {"S1gOfdmRate1_35MbpsBW4MHz",	{WIFI_CODE_RATE_1_2,	2}},
+      {"S1gOfdmRate2_70MbpsBW4MHz",	{WIFI_CODE_RATE_1_2,	4}},
+      {"S1gOfdmRate4_05MbpsBW4MHz",	{WIFI_CODE_RATE_3_4,	4}},
+      {"S1gOfdmRate5_40MbpsBW4MHz",	{WIFI_CODE_RATE_1_2,	16}},
+      {"S1gOfdmRate8_10MbpsBW4MHz",	{WIFI_CODE_RATE_3_4,	16}},
+      {"S1gOfdmRate10_80MbpsBW4MHz",	{WIFI_CODE_RATE_3_4,	64}},
+      {"S1gOfdmRate12_20MbpsBW4MHz",	{WIFI_CODE_RATE_3_4,	64}},
+      {"S1gOfdmRate13_50MbpsBW4MHz",	{WIFI_CODE_RATE_5_6,	64}},
+      {"S1gOfdmRate16_20MbpsBW4MHz",	{WIFI_CODE_RATE_3_4,	256}},
+      {"S1gOfdmRate18_00MbpsBW4MHz",	{WIFI_CODE_RATE_5_6,	256}},
+      {"S1gOfdmRate2_93MbpsBW8MHz",	{WIFI_CODE_RATE_1_2,	2}},
+      {"S1gOfdmRate5_85MbpsBW8MHz",	{WIFI_CODE_RATE_1_2,	4}},
+      {"S1gOfdmRate8_78MbpsBW8MHz",	{WIFI_CODE_RATE_3_4,	4}},
+      {"S1gOfdmRate11_70MbpsBW8MHz",	{WIFI_CODE_RATE_1_2,	16}},
+      {"S1gOfdmRate17_60MbpsBW8MHz",	{WIFI_CODE_RATE_3_4,	16}},
+      {"S1gOfdmRate23_40MbpsBW8MHz",	{WIFI_CODE_RATE_3_4,	64}},
+      {"S1gOfdmRate26_30MbpsBW8MHz",	{WIFI_CODE_RATE_3_4,	64}},
+      {"S1gOfdmRate29_30MbpsBW8MHz",	{WIFI_CODE_RATE_5_6,	64}},
+      {"S1gOfdmRate35_10MbpsBW8MHz",	{WIFI_CODE_RATE_3_4,	256}},
+      {"S1gOfdmRate39_00MbpsBW8MHz",	{WIFI_CODE_RATE_5_6,	256}},
+      {"S1gOfdmRate5_85MbpsBW16MHz",	{WIFI_CODE_RATE_1_2,	2}},
+      {"S1gOfdmRate11_70MbpsBW16MHz",	{WIFI_CODE_RATE_1_2,	4}},
+      {"S1gOfdmRate17_60MbpsBW16MHz",	{WIFI_CODE_RATE_3_4,	4}},
+      {"S1gOfdmRate23_40MbpsBW16MHz",	{WIFI_CODE_RATE_1_2,	16}},
+      {"S1gOfdmRate35_10MbpsBW16MHz",	{WIFI_CODE_RATE_3_4,	16}},
+      {"S1gOfdmRate46_80MbpsBW16MHz",	{WIFI_CODE_RATE_3_4,	64}},
+      {"S1gOfdmRate52_70MbpsBW16MHz",	{WIFI_CODE_RATE_3_4,	64}},
+      {"S1gOfdmRate58_50MbpsBW16MHz",	{WIFI_CODE_RATE_5_6,	64}},
+      {"S1gOfdmRate70_20MbpsBW16MHz",	{WIFI_CODE_RATE_3_4,	256}},
+      {"S1gOfdmRate78_00MbpsBW16MHz",	{WIFI_CODE_RATE_5_6,	256}},
+
 };
 
 /// S1G OFDM rates in bits per second
@@ -95,7 +108,7 @@ const PhyEntity::ModulationLookupTable S1gOfdmPhy::m_s1gOfdmModulationLookupTabl
 //        {  6000000,  9000000, 12000000, 18000000,
 //           24000000, 36000000, 48000000, 54000000};
 
-const std::map<uint16_t, std::array<uint64_t, 11> > s_s1gOfdmRatesBpsList =
+const std::map<uint16_t, std::vector<uint64_t> > s_s1gOfdmRatesBpsList =
         {
                 {1, {300000,600000,900000,1200000,1800000,2400000,2700000,3000000,3600000,4000000,150000,}},
                 {2, {650000,1300000,1950000,2600000,3900000,5200000,5850000,6500000,7800000,}},
@@ -113,7 +126,7 @@ const std::map<uint16_t, std::array<uint64_t, 11> > s_s1gOfdmRatesBpsList =
 *
 * \return the S1G OFDM rates in bits per second
 */
-const std::map<uint16_t, std::array<uint64_t, 11> >& GetS1gOfdmRatesBpsList (void)
+const std::map<uint16_t, std::vector<uint64_t> >& GetS1gOfdmRatesBpsList (void)
 {
   return s_s1gOfdmRatesBpsList;
 };
@@ -139,6 +152,28 @@ S1gOfdmPhy::~S1gOfdmPhy ()
 {
   NS_LOG_FUNCTION (this);
 }
+
+WifiMode
+S1gOfdmPhy::GetSigMode (WifiPpduField field, const WifiTxVector& txVector) const
+{
+  switch (field)
+  {
+    case WIFI_PPDU_FIELD_PREAMBLE: //consider header mode for preamble (useful for InterferenceHelper)
+    case WIFI_PPDU_FIELD_NON_HT_HEADER:
+    case WIFI_PPDU_FIELD_SIG_A:
+    case WIFI_PPDU_FIELD_SIG_B:
+      return GetHeaderMode (txVector);
+    default:
+      return PhyEntity::GetSigMode (field, txVector);
+  }
+}
+
+const PhyEntity::PpduFormats &
+S1gOfdmPhy::GetPpduFormats (void) const
+{
+  return m_ofdmPpduFormats;
+}
+
 Time
 S1gOfdmPhy::GetDuration (WifiPpduField field, const WifiTxVector& txVector) const
 {
@@ -154,12 +189,12 @@ S1gOfdmPhy::GetDuration (WifiPpduField field, const WifiTxVector& txVector) cons
 }
 
 Time
-S1gOfdmPhy::GetSigADuration (WifiPreamble preamble) const
+S1gOfdmPhy::GetSigADuration (WifiPreamble preamble)
 {
   return (preamble == WIFI_PREAMBLE_S1G_LONG) ? MicroSeconds (40*2) : MicroSeconds (0);
 }
 Time
-S1gOfdmPhy::GetSigBDuration (WifiPreamble preamble) const
+S1gOfdmPhy::GetSigBDuration (WifiPreamble preamble)
 {
   return (preamble == WIFI_PREAMBLE_S1G_LONG) ? MicroSeconds (40*1) : MicroSeconds (0);
 }
@@ -170,6 +205,17 @@ S1gOfdmPhy::GetHeaderMode (const WifiTxVector& txVector) const
   NS_ASSERT (txVector.GetMode ().GetModulationClass () == WIFI_MOD_CLASS_S1G);
   auto bwRatesMap = GetS1gOfdmRatesBpsList ();
   return GetS1gOfdmRate(bwRatesMap.at(txVector.GetChannelWidth()).at(0),txVector.GetChannelWidth());
+}
+
+PhyEntity::PhyFieldRxStatus
+S1gOfdmPhy::DoEndReceiveField (WifiPpduField field, Ptr<Event> event)
+{
+  NS_LOG_FUNCTION (this << field << *event);
+  if (field == WIFI_PPDU_FIELD_SIG_A || field == WIFI_PPDU_FIELD_SIG_B)
+  {
+    return PhyFieldRxStatus (true);
+  }
+  return OfdmPhy::DoEndReceiveField (field, event);
 }
 
 Time
@@ -242,7 +288,7 @@ S1gOfdmPhy::InitializeModes (void)
   {
     for (const auto & rate : ratesPerBw.second)
     {
-      GetOfdmRate (rate, ratesPerBw.first);
+      GetS1gOfdmRate (rate, ratesPerBw.first);
     }
   }
 }
@@ -548,16 +594,21 @@ S1gOfdmPhy::CalculateDataRate (WifiCodeRate codeRate, uint16_t constellationSize
   {
     case 1:
       usableSubCarriers = 24;
+      break;
     case 2:
       usableSubCarriers = 52;
-    case 3:
-      usableSubCarriers = 108;
+      break;
     case 4:
+      usableSubCarriers = 108;
+      break;
+    case 8:
       usableSubCarriers = 234;
-    case 5:
+      break;
+    case 16:
       usableSubCarriers = 468;
+      break;
     default:
-      NS_FATAL_ERROR ("trying to get code ratio for undefined channelWidth");
+      NS_FATAL_ERROR ("trying to get code ratio for undefined channelWidth at " << channelWidth);
   }
 
   return CalculateDataRate (symbolDuration, guardInterval,

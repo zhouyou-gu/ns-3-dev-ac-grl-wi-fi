@@ -10,6 +10,7 @@
 #include "ns3/yans-wifi-channel.h"
 #include "ns3/mobility-model.h"
 #include "ns3/internet-stack-helper.h"
+#include "ns3/uinteger.h"
 
 using namespace ns3;
 
@@ -41,12 +42,14 @@ static void GenerateTraffic (Ptr<Socket> socket, uint32_t pktSize,
 
 int main (int argc, char *argv[])
 {
-  std::string phyMode ("DsssRate1Mbps");
+  LogComponentEnable ("wifi-multi-ap", LOG_LEVEL_INFO);
+
+  std::string phyMode ("S1gOfdmRate0_30MbpsBW1MHz");
   double rss = -80;  // -dBm
   uint32_t packetSize = 1000; // bytes
-  uint32_t numPackets = 1;
+  uint32_t numPackets = 10;
   Time interval = Seconds (1.0);
-  bool verbose = false;
+  bool verbose = true;
 
   CommandLine cmd (__FILE__);
   cmd.AddValue ("phyMode", "Wifi Phy mode", phyMode);
@@ -70,9 +73,12 @@ int main (int argc, char *argv[])
     {
       wifi.EnableLogComponents ();  // Turn on all Wifi logging
     }
-  wifi.SetStandard (WIFI_STANDARD_80211b);
+  wifi.SetStandard (ns3::WIFI_STANDARD_80211ah);
 
   YansWifiPhyHelper wifiPhy;
+  wifiPhy.Set ("ChannelSettings", StringValue ("{0, 1, BAND_S1GHZ, 0}"));
+//  std::cout << "Testing " << wifiPhy.Get  << " packets sent with receiver rss " << rss << std::endl;
+
   // This is one parameter that matters when using FixedRssLossModel
   // set it to zero; otherwise, gain will be added
   wifiPhy.Set ("RxGain", DoubleValue (0) );
@@ -143,7 +149,7 @@ int main (int argc, char *argv[])
                                   Seconds (1.0), &GenerateTraffic,
                                   source, packetSize, numPackets, interval);
 
-  Simulator::Stop (Seconds (30.0));
+  Simulator::Stop (Seconds (1.1));
   Simulator::Run ();
   Simulator::Destroy ();
 

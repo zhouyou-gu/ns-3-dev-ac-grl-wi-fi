@@ -821,6 +821,10 @@ WifiPhy::Configure80211ah (void)
 {
   NS_LOG_FUNCTION (this);
   NS_ASSERT(m_band == WIFI_PHY_BAND_S1GHZ);
+  SetSifs (MicroSeconds (160));
+  SetSlot (MicroSeconds (52));
+  SetPifs (MicroSeconds (160 + 52));
+  m_ackTxTime = MicroSeconds (1120);
   AddPhyEntity (WIFI_MOD_CLASS_S1G, Create<S1gOfdmPhy> ());
 }
 

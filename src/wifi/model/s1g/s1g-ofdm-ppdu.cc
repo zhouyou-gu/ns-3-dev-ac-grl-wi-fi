@@ -29,7 +29,7 @@ namespace ns3 {
 
     S1gOfdmPpdu::S1gOfdmPpdu (Ptr<const WifiPsdu> psdu, const WifiTxVector& txVector,
                               WifiPhyBand band, uint64_t uid)
-            : OfdmPpdu (psdu, txVector, band, uid, true) //instantiate LSigHeader of OfdmPpdu
+            : OfdmPpdu (psdu, txVector, band, uid, false) //instantiate LSigHeader of OfdmPpdu
     {
       NS_LOG_FUNCTION (this << psdu << txVector << band << uid);
       m_mode = txVector.GetMode ();

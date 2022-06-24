@@ -51,7 +51,8 @@ namespace ns3 {
          * Destructor for S1G-OFDM PHY
          */
         virtual ~S1gOfdmPhy ();
-
+        WifiMode GetSigMode (WifiPpduField field, const WifiTxVector& txVector) const override;
+        const PpduFormats & GetPpduFormats (void) const override;
         Time GetDuration (WifiPpduField field, const WifiTxVector& txVector) const override;
         Time GetPayloadDuration (uint32_t size, const WifiTxVector& txVector, WifiPhyBand band, MpduType mpdutype,
                                  bool incFlag, uint32_t &totalAmpduSize, double &totalAmpduNumSymbols,
@@ -60,9 +61,10 @@ namespace ns3 {
         Ptr<WifiPpdu> BuildPpdu (const WifiConstPsduMap & psdus, const WifiTxVector& txVector, Time ppduDuration) override;
         uint32_t GetMaxPsduSize (void) const override;
 
+        PhyFieldRxStatus DoEndReceiveField (WifiPpduField field, Ptr<Event> event) override;
 
-        Time GetSigADuration (WifiPreamble preamble) const;
-        Time GetSigBDuration (WifiPreamble preamble) const;
+        static Time GetSigADuration (WifiPreamble preamble) ;
+        static Time GetSigBDuration (WifiPreamble preamble) ;
 
         /**
          * Initialize all S1G-OFDM modes.
@@ -220,6 +222,7 @@ namespace ns3 {
          * \return the S1G-OFDM WifiMode
          */
         static WifiMode CreateS1gOfdmMode (std::string uniqueName, bool isMandatory);
+        static const PpduFormats m_ofdmPpduFormats; //!< OFDM PPDU formats
 
         static const ModulationLookupTable m_s1gOfdmModulationLookupTable; //!< lookup table to retrieve code rate and constellation size corresponding to a unique name of modulation
     }; //class S1gOfdmPhy

@@ -271,6 +271,7 @@ PhyEntity::StartReceiveField (WifiPpduField field, Ptr<Event> event)
   bool supported = DoStartReceiveField (field, event);
   NS_ABORT_MSG_IF (!supported, "Unknown field " << field << " for this PHY entity"); //TODO see what to do if not supported
   Time duration = GetDuration (field, event->GetTxVector ());
+  NS_LOG_FUNCTION (this << " GetDuration (field, event->GetTxVector ())" << field << "  " << duration);
   m_wifiPhy->m_endPhyRxEvent = Simulator::Schedule (duration, &PhyEntity::EndReceiveField, this, field, event);
   m_state->SwitchMaybeToCcaBusy (duration); //keep in CCA busy state up to reception of Data (will then switch to RX)
 }

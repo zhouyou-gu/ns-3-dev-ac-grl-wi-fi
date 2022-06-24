@@ -109,6 +109,12 @@ inline std::ostream& operator<< (std::ostream &os, const WifiPreamble &preamble)
         return (os << "HE_MU");
       case WIFI_PREAMBLE_HE_TB:
         return (os << "HE_TB");
+      case WIFI_PREAMBLE_S1G_SHORT:
+        return (os << "S1G_SHORT");
+      case WIFI_PREAMBLE_S1G_LONG:
+        return (os << "S1G_LONG");
+      case WIFI_PREAMBLE_S1G_1M:
+        return (os << "S1G_1M");
       default:
         NS_FATAL_ERROR ("Invalid preamble");
         return (os << "INVALID");
@@ -129,11 +135,11 @@ enum WifiModulationClass
   WIFI_MOD_CLASS_DSSS,     //!< DSSS (Clause 15)
   WIFI_MOD_CLASS_HR_DSSS,  //!< HR/DSSS (Clause 16)
   WIFI_MOD_CLASS_ERP_OFDM, //!< ERP-OFDM (18.4)
+  WIFI_MOD_CLASS_S1G,       //!< S1G (Clause 23)
   WIFI_MOD_CLASS_OFDM,     //!< OFDM (Clause 17)
   WIFI_MOD_CLASS_HT,       //!< HT (Clause 19)
   WIFI_MOD_CLASS_VHT,      //!< VHT (Clause 22)
   WIFI_MOD_CLASS_HE,       //!< HE (Clause 27)
-  WIFI_MOD_CLASS_S1G       //!< HE (Clause 23)
 };
 
 /**

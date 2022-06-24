@@ -94,7 +94,7 @@ for m in MCS_LIST:
     '''
     { "OfdmRate54Mbps",         { WIFI_CODE_RATE_3_4, 64 } },
     '''
-    wf.write('\t{"'+m.uni_name+'",\t{'+m.code_rate_str+',\t'+str(m.mod_constellation)+'}},\n')
+    wf.write('\t{"S1g'+m.uni_name+'",\t{'+m.code_rate_str+',\t'+str(m.mod_constellation)+'}},\n')
 
 
 PATH = 'gen_s1g_getofdmmod_h.txt'
