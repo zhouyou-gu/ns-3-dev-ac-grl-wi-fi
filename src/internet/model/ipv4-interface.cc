@@ -215,6 +215,7 @@ Ipv4Interface::Send (Ptr<Packet> p, const Ipv4Header & hdr, Ipv4Address dest)
   NS_LOG_FUNCTION (this << *p << dest);
   if (!IsUp ())
     {
+      NS_LOG_LOGIC ("ip interface not up");
       return;
     }
 
@@ -224,6 +225,8 @@ Ipv4Interface::Send (Ptr<Packet> p, const Ipv4Header & hdr, Ipv4Address dest)
     {
       /// \todo additional checks needed here (such as whether multicast
       /// goes to loopback)?
+      NS_LOG_LOGIC ("loopback");
+
       p->AddHeader (hdr);
       m_device->Send (p, m_device->GetBroadcast (), Ipv4L3Protocol::PROT_NUMBER);
       return;

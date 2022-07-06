@@ -255,18 +255,20 @@ S1gOfdmPhy::GetPayloadDuration (uint32_t size, const WifiTxVector& txVector, Wif
                              bool /* incFlag */, uint32_t & /* totalAmpduSize */, double & /* totalAmpduNumSymbols */,
                              uint16_t /* staId */) const
 {
-  //(Section 17.3.2.4 "Timing related parameters" Table 17-5 "Timing-related parameters"; IEEE Std 802.11-2016
-  //corresponds to T_{SYM} in the table)
   Time symbolDuration = MicroSeconds (40);
 
   double numDataBitsPerSymbol = txVector.GetMode ().GetDataRate (txVector) * symbolDuration.GetNanoSeconds () / 1e9;
 
   //The number of OFDM symbols in the data field when BCC encoding
   //is used is given in equation 19-32 of the IEEE 802.11-2016 standard.
-  double numSymbols = lrint (ceil ((GetNumberServiceBits () + size * 8.0 + 6.0) / (numDataBitsPerSymbol)));
+  double numSymbols = lrint (ceil ((8.0 + size * 8.0 + 6.0) / (numDataBitsPerSymbol)));
 
   Time payloadDuration = FemtoSeconds (static_cast<uint64_t> (numSymbols * symbolDuration.GetFemtoSeconds ()));
 
+  NS_LOG_FUNCTION(this << "payloadDuration (us): " << payloadDuration.GetMicroSeconds());
+  NS_LOG_FUNCTION(this << "numSymbols : " << numSymbols);
+  NS_LOG_FUNCTION(this << "numBits : " << size * 8);
+  NS_LOG_FUNCTION(this << "data rate : " << txVector.GetMode ().GetDataRate (txVector));
 
   return payloadDuration;
 }
@@ -587,7 +589,7 @@ S1gOfdmPhy::GetDataRate (const std::string& name, uint16_t channelWidth)
 uint64_t
 S1gOfdmPhy::CalculateDataRate (WifiCodeRate codeRate, uint16_t constellationSize, uint16_t channelWidth)
 {
-  double symbolDuration = 40; //in us
+  double symbolDuration = 32; //in us
   uint16_t guardInterval = 8000; //in ns
   uint16_t usableSubCarriers = 0;
   switch (channelWidth)

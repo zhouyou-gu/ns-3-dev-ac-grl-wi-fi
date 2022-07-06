@@ -529,8 +529,12 @@ PhyEntity::StartReceivePayload (Ptr<Event> event)
   NS_LOG_FUNCTION (this << *event);
   NS_ASSERT (m_wifiPhy->m_endPhyRxEvent.IsExpired ());
   const WifiTxVector& txVector = event->GetTxVector ();
-  Time payloadDuration = event->GetPpdu ()->GetTxDuration () - CalculatePhyPreambleAndHeaderDuration (txVector);
-
+  Time ppduDuration = event->GetPpdu ()->GetTxDuration ();
+  Time preambleAndHeaderDuration = CalculatePhyPreambleAndHeaderDuration (txVector);
+  Time payloadDuration = ppduDuration - preambleAndHeaderDuration;
+  NS_LOG_FUNCTION (this << "ppduDuration (us): " << ppduDuration.GetMicroSeconds());
+  NS_LOG_FUNCTION (this << "payloadDuration (us): " << payloadDuration.GetMicroSeconds());
+  NS_LOG_FUNCTION (this << "preambleAndHeaderDuration (us): " << preambleAndHeaderDuration.GetMicroSeconds());
   //TODO: Add method in WifiPhy to clear all other PHYs (since this one is starting Rx)
   m_state->SwitchToRx (payloadDuration);
   m_wifiPhy->m_phyRxPayloadBeginTrace (txVector, payloadDuration); //this callback (equivalent to PHY-RXSTART primitive) is triggered only if headers have been correctly decoded and that the mode within is supported
@@ -572,6 +576,7 @@ PhyEntity::ScheduleEndOfMpdus (Ptr<Event> event)
   for (size_t i = 0; i < nMpdus && mpdu != psdu->end (); ++mpdu)
     {
       uint32_t size = (mpduType == NORMAL_MPDU) ? psdu->GetSize () : psdu->GetAmpduSubframeSize (i);
+      NS_LOG_FUNCTION ("size #" << size);
       Time mpduDuration = m_wifiPhy->GetPayloadDuration (size, txVector,
                                                          m_wifiPhy->GetPhyBand (), mpduType, true, totalAmpduSize,
                                                          totalAmpduNumSymbols, staId);
@@ -738,6 +743,9 @@ PhyEntity::AddPreambleEvent (Ptr<Event> event)
 Ptr<Event>
 PhyEntity::DoGetEvent (Ptr<const WifiPpdu> ppdu, RxPowerWattPerChannelBand& rxPowersW)
 {
+  Time duration  = ppdu->GetTxDuration();
+  NS_LOG_FUNCTION (this << "duration (us) : "<< duration.GetMicroSeconds());
+
   Ptr<Event> event = CreateInterferenceEvent (ppdu, ppdu->GetTxVector (), ppdu->GetTxDuration (), rxPowersW);
 
   //We store all incoming preamble events, and a decision is made at the end of the preamble detection window.

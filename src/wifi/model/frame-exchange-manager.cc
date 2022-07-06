@@ -417,6 +417,12 @@ FrameExchangeManager::SendMpdu (void)
                     + m_phy->GetSlot ()
                     + m_phy->CalculatePhyPreambleAndHeaderDuration (normalAcknowledgment->ackTxVector);
       NS_ASSERT (!m_txTimer.IsRunning ());
+      NS_LOG_FUNCTION (this<< "WifiNormalAck timer (us) " <<  timeout.GetMicroSeconds());
+      NS_LOG_FUNCTION (this<< "data txDuration (us) " <<  txDuration.GetMicroSeconds());
+      NS_LOG_FUNCTION (this<< "ack txDuration(us) " <<  m_phy->CalculatePhyPreambleAndHeaderDuration (normalAcknowledgment->ackTxVector).GetMicroSeconds());
+      NS_LOG_FUNCTION (this<< "m_phy->GetSifs () (us) " <<  m_phy->GetSifs ().GetMicroSeconds());
+      NS_LOG_FUNCTION (this<< "m_phy->GetSlot () (us) " <<  m_phy->GetSlot ().GetMicroSeconds());
+
       m_txTimer.Set (WifiTxTimer::WAIT_NORMAL_ACK, timeout, &FrameExchangeManager::NormalAckTimeout,
                      this, m_mpdu, m_txParams.m_txVector);
       m_channelAccessManager->NotifyAckTimeoutStartNow (timeout);

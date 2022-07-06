@@ -1223,7 +1223,7 @@ WifiRemoteStationManager::LookupState (Mac48Address address) const
 
   if (stateIt != m_states.end ())
     {
-      NS_LOG_DEBUG ("WifiRemoteStationManager::LookupState returning existing state");
+      NS_LOG_DEBUG ("WifiRemoteStationManager::LookupState returning existing state " << (stateIt->second)->m_state);
       return stateIt->second;
     }
 

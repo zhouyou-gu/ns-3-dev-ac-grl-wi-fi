@@ -978,7 +978,7 @@ Ipv4L3Protocol::SendRealOut (Ptr<Ipv4Route> route,
   int32_t interface = GetInterfaceForDevice (outDev);
   NS_ASSERT (interface >= 0);
   Ptr<Ipv4Interface> outInterface = GetInterface (interface);
-  NS_LOG_LOGIC ("Send via NetDevice ifIndex " << outDev->GetIfIndex () << " ipv4InterfaceIndex " << interface);
+  NS_LOG_LOGIC ("Send via NetDevice ifIndex " << outDev->GetIfIndex () << "/" << outDev->GetInstanceTypeId() << " ipv4InterfaceIndex " << interface);
 
   Ipv4Address target;
   std::string targetLabel;

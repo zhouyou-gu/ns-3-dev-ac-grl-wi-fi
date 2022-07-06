@@ -42,7 +42,7 @@ WifiMacQueue::GetTypeId (void)
     .AddConstructor<WifiMacQueue> ()
     .AddAttribute ("MaxSize",
                    "The max queue size",
-                   QueueSizeValue (QueueSize ("500p")),
+                   QueueSizeValue (QueueSize ("10p")),
                    MakeQueueSizeAccessor (&QueueBase::SetMaxSize,
                                           &QueueBase::GetMaxSize),
                    MakeQueueSizeChecker ())
@@ -51,7 +51,7 @@ WifiMacQueue::GetTypeId (void)
                    MakeTimeAccessor (&WifiMacQueue::SetMaxDelay),
                    MakeTimeChecker ())
     .AddAttribute ("DropPolicy", "Upon enqueue with full queue, drop oldest (DropOldest) or newest (DropNewest) packet",
-                   EnumValue (DROP_NEWEST),
+                   EnumValue (DROP_OLDEST),
                    MakeEnumAccessor (&WifiMacQueue::m_dropPolicy),
                    MakeEnumChecker (WifiMacQueue::DROP_OLDEST, "DropOldest",
                                     WifiMacQueue::DROP_NEWEST, "DropNewest"))

@@ -67,6 +67,8 @@ OfdmPpdu::GetTxDuration (void) const
   Time ppduDuration = Seconds (0);
   const WifiTxVector& txVector = GetTxVector ();
   ppduDuration = WifiPhy::CalculateTxDuration (m_lSig.GetLength (), txVector, m_band);
+  NS_LOG_FUNCTION (this << "ppduDuration (us)" <<ppduDuration.GetMicroSeconds());
+
   return ppduDuration;
 }
 

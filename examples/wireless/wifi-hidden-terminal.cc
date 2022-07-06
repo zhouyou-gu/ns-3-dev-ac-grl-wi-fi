@@ -77,6 +77,7 @@ void experiment (bool enableCtsRts, std::string wifiManager)
 
   // 5. Install wireless devices
   WifiHelper wifi;
+  wifi.EnableLogComponents ();
   wifi.SetStandard (WIFI_STANDARD_80211b);
   wifi.SetRemoteStationManager ("ns3::" + wifiManager + "WifiManager");
   YansWifiPhyHelper wifiPhy;
@@ -180,16 +181,16 @@ void experiment (bool enableCtsRts, std::string wifiManager)
 
 int main (int argc, char **argv)
 {
-  std::string wifiManager ("Arf");
+  std::string wifiManager ("Ideal");
   CommandLine cmd (__FILE__);
   cmd.AddValue ("wifiManager", "Set wifi rate manager (Aarf, Aarfcd, Amrr, Arf, Cara, Ideal, Minstrel, Onoe, Rraa)", wifiManager);
   cmd.Parse (argc, argv);
 
   std::cout << "Hidden station experiment with RTS/CTS disabled:\n" << std::flush;
   experiment (false, wifiManager);
-  std::cout << "------------------------------------------------\n";
-  std::cout << "Hidden station experiment with RTS/CTS enabled:\n";
-  experiment (true, wifiManager);
+//  std::cout << "------------------------------------------------\n";
+//  std::cout << "Hidden station experiment with RTS/CTS enabled:\n";
+//  experiment (true, wifiManager);
 
   return 0;
 }

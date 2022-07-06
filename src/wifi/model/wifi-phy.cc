@@ -160,7 +160,7 @@ WifiPhy::GetTypeId (void)
                    " the noise output of the actual receiver to the noise output of an "
                    " ideal receiver with the same overall gain and bandwidth when the receivers "
                    " are connected to sources at the standard noise temperature T0 (usually 290 K)\".",
-                   DoubleValue (7),
+                   DoubleValue (20),
                    MakeDoubleAccessor (&WifiPhy::SetRxNoiseFigure),
                    MakeDoubleChecker<double> ())
     .AddAttribute ("State",
@@ -1871,6 +1871,8 @@ WifiPhy::SwitchMaybeToCcaBusy (uint16_t channelWidth)
   //In this model, CCA becomes busy when the aggregation of all signals as
   //tracked by the InterferenceHelper class is higher than the CcaBusyThreshold
   Time delayUntilCcaEnd = m_interference.GetEnergyDuration (m_ccaEdThresholdW, GetPrimaryBand (channelWidth));
+  NS_LOG_FUNCTION (this << "delayUntilCcaEnd (us) " <<delayUntilCcaEnd.GetMicroSeconds());
+
   if (!delayUntilCcaEnd.IsZero ())
     {
       NS_LOG_DEBUG ("Calling SwitchMaybeToCcaBusy for " << delayUntilCcaEnd.As (Time::S));
@@ -1991,6 +1993,7 @@ WifiPhy::GetBand (uint16_t /*bandWidth*/, uint8_t /*bandIndex*/)
   WifiSpectrumBand band;
   band.first = 0;
   band.second = 0;
+  NS_LOG_FUNCTION (this << band.first << " - " << band.second);
   return band;
 }
 

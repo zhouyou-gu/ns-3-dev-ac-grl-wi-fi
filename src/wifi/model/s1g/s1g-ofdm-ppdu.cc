@@ -17,7 +17,7 @@
  *
  * Author: Zhouyou <zhouyou.gu@sydney.edu.au>
  */
-
+#include "ns3/wifi-phy.h"
 #include "ns3/wifi-psdu.h"
 #include "s1g-ofdm-phy.h"
 #include "s1g-ofdm-ppdu.h"
@@ -33,6 +33,7 @@ namespace ns3 {
     {
       NS_LOG_FUNCTION (this << psdu << txVector << band << uid);
       m_mode = txVector.GetMode ();
+      m_length = psdu->GetSize();
     }
 
     S1gOfdmPpdu::~S1gOfdmPpdu ()
@@ -48,7 +49,16 @@ namespace ns3 {
       txVector.SetChannelWidth (m_channelWidth);
       return txVector;
     }
+    Time
+    S1gOfdmPpdu::GetTxDuration (void) const
+    {
+      Time ppduDuration = Seconds (0);
+      const WifiTxVector& txVector = GetTxVector ();
+      ppduDuration = WifiPhy::CalculateTxDuration (m_length, txVector, m_band);
+      NS_LOG_FUNCTION (this << "ppduDuration (us)" << ppduDuration.GetMicroSeconds());
 
+      return ppduDuration;
+    }
     Ptr<WifiPpdu>
     S1gOfdmPpdu::Copy (void) const
     {

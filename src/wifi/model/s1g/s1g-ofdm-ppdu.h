@@ -31,39 +31,42 @@
 
 namespace ns3 {
 
-    class WifiPsdu;
+class WifiPsdu;
 
 /**
- * \brief S1G-OFDM PPDU (11g)
- * \ingroup wifi
- *
- * S1gOfdmPpdu stores a preamble, PHY headers and a PSDU of a PPDU with non-HT header,
- * i.e., PPDU that uses S1G-OFDM modulation.
- */
-    class S1gOfdmPpdu : public OfdmPpdu
-    {
-    public:
-        /**
-         * Create an S1G-OFDM PPDU.
-         *
-         * \param psdu the PHY payload (PSDU)
-         * \param txVector the TXVECTOR that was used for this PPDU
-         * \param band the WifiPhyBand used for the transmission of this PPDU
-         * \param uid the unique ID of this PPDU
-         */
-        S1gOfdmPpdu (Ptr<const WifiPsdu> psdu, const WifiTxVector& txVector,
-                     WifiPhyBand band, uint64_t uid);
-        /**
-         * Destructor for S1gOfdmPpdu.
-         */
-        virtual ~S1gOfdmPpdu ();
+* \brief S1G-OFDM PPDU (11g)
+* \ingroup wifi
+*
+* S1gOfdmPpdu stores a preamble, PHY headers and a PSDU of a PPDU with non-HT header,
+* i.e., PPDU that uses S1G-OFDM modulation.
+*/
+class S1gOfdmPpdu : public OfdmPpdu
+{
+public:
+    /**
+     * Create an S1G-OFDM PPDU.
+     *
+     * \param psdu the PHY payload (PSDU)
+     * \param txVector the TXVECTOR that was used for this PPDU
+     * \param band the WifiPhyBand used for the transmission of this PPDU
+     * \param uid the unique ID of this PPDU
+     */
+    S1gOfdmPpdu (Ptr<const WifiPsdu> psdu, const WifiTxVector& txVector,
+                 WifiPhyBand band, uint64_t uid);
+    /**
+     * Destructor for S1gOfdmPpdu.
+     */
+    virtual ~S1gOfdmPpdu ();
+    Time GetTxDuration (void) const override;
+    Ptr<WifiPpdu> Copy (void) const override;
 
-        Ptr<WifiPpdu> Copy (void) const override;
+private:
+    WifiTxVector DoGetTxVector (void) const override;
+    WifiMode m_mode;
+    uint16_t m_length; ///< LENGTH field
 
-    private:
-        WifiTxVector DoGetTxVector (void) const override;
-        WifiMode m_mode;
-    }; //class S1gOfdmPpdu
+
+}; //class S1gOfdmPpdu
 
 } //namespace ns3
 

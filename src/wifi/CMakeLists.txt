@@ -49,8 +49,8 @@ set(source_files
     model/ht/ht-operation.cc
     model/ht/ht-phy.cc
     model/ht/ht-ppdu.cc
-        model/s1g/s1g-ofdm-phy.cc
-        model/s1g/s1g-ofdm-ppdu.cc
+    model/s1g/s1g-ofdm-phy.cc
+    model/s1g/s1g-ofdm-ppdu.cc
     model/interference-helper.cc
     model/mac-rx-middle.cc
     model/mac-tx-middle.cc
@@ -140,6 +140,7 @@ set(source_files
     model/yans-error-rate-model.cc
     model/yans-wifi-channel.cc
     model/yans-wifi-phy.cc
+    model/extension/populatearpcache.cc
 )
 
 set(header_files
@@ -185,8 +186,8 @@ set(header_files
     model/ht/ht-operation.h
     model/ht/ht-phy.h
     model/ht/ht-ppdu.h
-        model/s1g/s1g-ofdm-phy.h
-        model/s1g/s1g-ofdm-ppdu.h
+    model/s1g/s1g-ofdm-phy.h
+    model/s1g/s1g-ofdm-ppdu.h
     model/interference-helper.h
     model/mac-rx-middle.h
     model/mac-tx-middle.h
@@ -282,6 +283,7 @@ set(header_files
     model/yans-error-rate-model.h
     model/yans-wifi-channel.h
     model/yans-wifi-phy.h
+    model/extension/populatearpcache.h
 )
 
 build_lib(

@@ -501,6 +501,7 @@ SpectrumWifiPhy::GetBand (uint16_t bandWidth, uint8_t bandIndex)
       band.first += 1;
     }
   band.second = band.first + numBandsInBand - 1;
+  NS_LOG_FUNCTION (this << band.first << " - " << band.second);
   return band;
 }
 

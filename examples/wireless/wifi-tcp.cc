@@ -69,6 +69,17 @@ CalculateThroughput ()
 int
 main (int argc, char *argv[])
 {
+
+//  LogComponentEnable ("wifi-single-ap-rate-test", LOG_LEVEL_INFO);
+  LogComponentEnable ("UdpServer", ns3::LOG_LEVEL_ALL);
+  LogComponentEnable ("UdpClient", ns3::LOG_LEVEL_ALL);
+  LogComponentEnable ("S1gOfdmPhy", ns3::LOG_LEVEL_ALL);
+  LogComponentEnable ("S1gOfdmPpdu", ns3::LOG_LEVEL_ALL);
+  LogComponentEnable ("UdpSocketImpl", ns3::LOG_LEVEL_ALL);
+  LogComponentEnable ("Ipv4Interface", ns3::LOG_LEVEL_ALL);
+  LogComponentEnable ("WifiNetDevice", ns3::LOG_LEVEL_ALL);
+  LogComponentEnable ("Ipv4L3Protocol", ns3::LOG_LEVEL_ALL);
+
   uint32_t payloadSize = 1472;                       /* Transport layer payload size in bytes. */
   std::string dataRate = "100Mbps";                  /* Application layer datarate. */
   std::string tcpVariant = "TcpNewReno";             /* TCP variant type. */
@@ -170,12 +181,12 @@ main (int argc, char *argv[])
   Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
 
   /* Install TCP Receiver on the access point */
-  PacketSinkHelper sinkHelper ("ns3::TcpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), 9));
+  PacketSinkHelper sinkHelper ("ns3::UdpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), 9));
   ApplicationContainer sinkApp = sinkHelper.Install (apWifiNode);
   sink = StaticCast<PacketSink> (sinkApp.Get (0));
 
   /* Install TCP/UDP Transmitter on the station */
-  OnOffHelper server ("ns3::TcpSocketFactory", (InetSocketAddress (apInterface.GetAddress (0), 9)));
+  OnOffHelper server ("ns3::UdpSocketFactory", (InetSocketAddress (apInterface.GetAddress (0), 9)));
   server.SetAttribute ("PacketSize", UintegerValue (payloadSize));
   server.SetAttribute ("OnTime", StringValue ("ns3::ConstantRandomVariable[Constant=1]"));
   server.SetAttribute ("OffTime", StringValue ("ns3::ConstantRandomVariable[Constant=0]"));

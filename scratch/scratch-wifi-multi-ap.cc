@@ -49,7 +49,7 @@ int main (int argc, char *argv[])
   uint32_t packetSize = 1000; // bytes
   uint32_t numPackets = 10;
   Time interval = Seconds (1.0);
-  bool verbose = true;
+  bool verbose = false;
 
   CommandLine cmd (__FILE__);
   cmd.AddValue ("phyMode", "Wifi Phy mode", phyMode);

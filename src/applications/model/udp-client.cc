@@ -198,15 +198,17 @@ UdpClient::Send (void)
   seqTs.SetSeq (m_sent);
   Ptr<Packet> p = Create<Packet> (m_size-(8+4)); // 8+4 : the size of the seqTs header
   p->AddHeader (seqTs);
-
-  if ((m_socket->Send (p)) >= 0)
+  int b = m_socket->Send (p);
+  if (b >= 0)
     {
       ++m_sent;
       m_totalTx += p->GetSize ();
 #ifdef NS3_LOG_ENABLE
-    NS_LOG_INFO ("TraceDelay TX " << m_size << " bytes to "
+    NS_LOG_INFO ("TraceDelay TX " << m_size <<"/" << b <<" bytes to "
                                     << m_peerAddressString << " Uid: "
-                                    << p->GetUid () << " Time: "
+                                    << p->GetUid () << " nSent: "
+                                    << m_sent << " Total: "
+                                    << m_count << " Time: "
                                     << (Simulator::Now ()).As (Time::S));
 #endif // NS3_LOG_ENABLE
     }
