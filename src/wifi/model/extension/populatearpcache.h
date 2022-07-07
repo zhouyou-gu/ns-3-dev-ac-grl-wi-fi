@@ -4,4 +4,5 @@
 
 namespace ns3 {
     void PopulateARPcache();
+    void PopulateARPcacheForWiFiInterface (NetDeviceContainer Dc);
 }
