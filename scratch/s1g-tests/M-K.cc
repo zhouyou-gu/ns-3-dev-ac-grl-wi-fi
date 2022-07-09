@@ -226,7 +226,7 @@ int main (int argc, char *argv[])
     sta_r->AddHostRouteTo (server_to_gate_intf.GetAddress(1),"10.2.0.1",staInterface.Get(i).second);
   }
 
-  Simulator::Stop (Seconds (2));
+  Simulator::Stop (Seconds (1.5));
 
   Simulator::Run ();
   for (int i = 0; i < n_sta; ++i) {

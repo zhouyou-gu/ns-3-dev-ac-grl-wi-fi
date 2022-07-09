@@ -100,7 +100,8 @@ WifiMode::GetPhyRate (const WifiTxVector& txVector, uint16_t staId) const
 uint64_t
 WifiMode::GetDataRate (uint16_t channelWidth) const
 {
-  return GetDataRate (channelWidth, 800, 1);
+  uint16_t guardInterval = GetModulationClass()==WIFI_MOD_CLASS_S1G ? 8000 : 800;
+  return GetDataRate (channelWidth, guardInterval, 1);
 }
 
 uint64_t
