@@ -12,7 +12,7 @@
 #include "ns3/udp-server.h"
 #include "ns3/boolean.h"
 #include "ns3/ipv4-global-routing-helper.h"
-#include "ns3/populatearpcache.h"
+#include "populatearp/populatearpcache.h"
 
 
 using namespace ns3;

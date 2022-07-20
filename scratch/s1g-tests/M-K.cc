@@ -16,7 +16,6 @@
 #include "ns3/udp-server.h"
 #include "ns3/boolean.h"
 #include "ns3/ipv4-global-routing-helper.h"
-#include "ns3/populatearpcache.h"
 
 
 #define UDP_IP_WIFI_HEADER_SIZE 64
@@ -31,7 +30,6 @@ int main (int argc, char *argv[])
   LogComponentEnableAll (LOG_PREFIX_NODE);
 //
   LogComponentEnable ("wifi-test", LOG_LEVEL_INFO);
-  LogComponentEnable ("PopulateARPcache", ns3::LOG_LEVEL_ALL);
 //
   LogComponentEnable ("UdpServer", ns3::LOG_LEVEL_ALL);
   LogComponentEnable ("UdpClient", ns3::LOG_LEVEL_ALL);
