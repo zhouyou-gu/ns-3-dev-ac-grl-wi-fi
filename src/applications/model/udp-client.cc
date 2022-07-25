@@ -30,6 +30,9 @@
 #include "ns3/uinteger.h"
 #include "udp-client.h"
 #include "seq-ts-header.h"
+#include "ns3/boolean.h"
+#include "ns3/random-variable-stream.h"
+#include "ns3/double.h"
 #include <cstdlib>
 #include <cstdio>
 
@@ -55,6 +58,10 @@ UdpClient::GetTypeId (void)
                    "The time to wait between packets", TimeValue (Seconds (1.0)),
                    MakeTimeAccessor (&UdpClient::m_interval),
                    MakeTimeChecker ())
+    .AddAttribute ("IsPoisson",
+                   "Whether the arrival interval is poisson distributed or not", BooleanValue (true),
+                   MakeBooleanAccessor(&UdpClient::m_ispoisson),
+                   MakeBooleanChecker())
     .AddAttribute ("RemoteAddress",
                    "The destination Address of the outbound packets",
                    AddressValue (),
@@ -179,7 +186,15 @@ UdpClient::StartApplication (void)
 
   m_socket->SetRecvCallback (MakeNullCallback<void, Ptr<Socket> > ());
   m_socket->SetAllowBroadcast (true);
-  m_sendEvent = Simulator::Schedule (Seconds (0.0), &UdpClient::Send, this);
+  m_poisson = CreateObject<ExponentialRandomVariable> ();
+  m_poisson->SetAttribute ("Mean", DoubleValue ((double) m_interval.GetMicroSeconds()));
+  m_poisson->SetAttribute ("Bound", DoubleValue (10 * (double) m_interval.GetMicroSeconds()));
+  if (!m_ispoisson){
+    m_sendEvent = Simulator::Schedule (Seconds (0.0), &UdpClient::Send, this);
+  }
+  else{
+    m_sendEvent = Simulator::Schedule (MicroSeconds((int)m_poisson->GetValue()), &UdpClient::Send, this);
+  }
 }
 
 void
@@ -222,7 +237,12 @@ UdpClient::Send (void)
 
   if (m_sent < m_count)
     {
-      m_sendEvent = Simulator::Schedule (m_interval, &UdpClient::Send, this);
+      if (!m_ispoisson){
+        m_sendEvent = Simulator::Schedule (m_interval, &UdpClient::Send, this);
+      }
+      else{
+        m_sendEvent = Simulator::Schedule (MicroSeconds((int)m_poisson->GetValue()), &UdpClient::Send, this);
+      }
     }
 }
 

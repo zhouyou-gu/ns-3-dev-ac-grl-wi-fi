@@ -99,7 +99,7 @@ WifiPhy::GetTypeId (void)
                    "The width in MHz of the current operating channel (5, 10, 20, 22, 40, 80 or 160).",
                    UintegerValue (0),
                    MakeUintegerAccessor (&WifiPhy::GetChannelWidth),
-                   MakeUintegerChecker<uint16_t> (5, 160))
+                   MakeUintegerChecker<uint16_t> (1, 160))
     .AddAttribute ("Primary20MHzIndex",
                    "The index of the primary 20 MHz channel within the current operating channel "
                    "(0 indicates the 20 MHz subchannel with the lowest center frequency).",

@@ -80,6 +80,10 @@ public:
    *  be a multiple of 8
    */
   void SetPacketWindowSize (uint16_t size);
+
+  double GetLastAoI_us ();
+  double GetAvgDelay_us ();
+
 protected:
   virtual void DoDispose (void);
 
@@ -103,7 +107,15 @@ private:
   uint64_t m_received; //!< Number of received packets
   PacketLossCounter m_lossCounter; //!< Lost packet counter
 
-  /// Callbacks for tracing the packet Rx events
+  Time m_last_received_packet_sending_time;
+  double m_aoi_area = 0;
+  double m_mean_aoi = 0;
+  double m_delay_sum = 0;
+  double m_delay_avg = 0;
+
+  bool m_is_stopped = false;
+
+    /// Callbacks for tracing the packet Rx events
   TracedCallback<Ptr<const Packet> > m_rxTrace;
 
   /// Callbacks for tracing the packet Rx events, includes source and destination addresses

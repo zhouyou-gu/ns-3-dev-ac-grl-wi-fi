@@ -31,7 +31,7 @@ set(GNU_MinVersion 8.0.0)
 # common options
 option(NS3_ASSERT "Enable assert on failure" OFF)
 option(NS3_DES_METRICS "Enable DES Metrics event collection" OFF)
-option(NS3_EXAMPLES "Enable examples to be built" ON)
+option(NS3_EXAMPLES "Enable examples to be built" OFF)
 option(NS3_LOG "Enable logging to be built" OFF)
 option(NS3_TESTS "Enable tests to be built" OFF)
 
@@ -88,16 +88,16 @@ option(NS3_STATIC "Build a static ns-3 library and link it against executables"
 )
 option(NS3_VERBOSE "Print additional build system messages" OFF)
 option(NS3_VISUALIZER "Build visualizer module" ON)
-option(NS3_WARNINGS "Enable compiler warnings" ON)
+option(NS3_WARNINGS "Enable compiler warnings" OFF)
 option(NS3_WARNINGS_AS_ERRORS
-       "Treat warnings as errors. Requires NS3_WARNINGS=ON" ON
+       "Treat warnings as errors. Requires NS3_WARNINGS=ON" OFF
 )
 
 # Options that either select which modules will get built or disable modules
 set(NS3_ENABLED_MODULES ""
     CACHE STRING "List of modules to enable (e.g. core;network;internet)"
 )
-set(NS3_DISABLED_MODULES ""
+set(NS3_DISABLED_MODULES "" lte;wimax;wave
     CACHE STRING "List of modules to disable (e.g. lte;wimax;wave)"
 )
 

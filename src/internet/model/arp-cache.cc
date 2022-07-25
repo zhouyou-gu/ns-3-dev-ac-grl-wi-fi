@@ -46,7 +46,7 @@ ArpCache::GetTypeId (void)
     .AddAttribute ("AliveTimeout",
                    "When this timeout expires, "
                    "the matching cache entry needs refreshing",
-                   TimeValue (Seconds (120)),
+                   TimeValue (Seconds (60*60*24)),
                    MakeTimeAccessor (&ArpCache::m_aliveTimeout),
                    MakeTimeChecker ())
     .AddAttribute ("DeadTimeout",

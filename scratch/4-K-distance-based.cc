@@ -26,6 +26,7 @@ NS_LOG_COMPONENT_DEFINE ("wifi-test");
 
 int main (int argc, char *argv[])
 {
+  RngSeedManager::SetSeed (2);
   LogComponentEnableAll (LOG_PREFIX_TIME);
   LogComponentEnableAll (LOG_PREFIX_NODE);
 //
@@ -33,23 +34,23 @@ int main (int argc, char *argv[])
 //
   LogComponentEnable ("UdpServer", ns3::LOG_LEVEL_ALL);
   LogComponentEnable ("UdpClient", ns3::LOG_LEVEL_ALL);
-  LogComponentEnable ("UdpSocketImpl", ns3::LOG_LEVEL_ALL);
-  LogComponentEnable ("Ipv4Interface", ns3::LOG_LEVEL_ALL);
-  LogComponentEnable ("Ipv4L3Protocol", ns3::LOG_LEVEL_ALL);
-  LogComponentEnable ("Ipv4", ns3::LOG_LEVEL_ALL);
-  LogComponentEnable ("NetDevice", ns3::LOG_LEVEL_ALL);
-  LogComponentEnable ("ArpL3Protocol", ns3::LOG_LEVEL_ALL);
-  LogComponentEnable ("PointToPointChannel", ns3::LOG_LEVEL_ALL);
-  LogComponentEnable ("PointToPointNetDevice", ns3::LOG_LEVEL_ALL);
+//  LogComponentEnable ("UdpSocketImpl", ns3::LOG_LEVEL_ALL);
+//  LogComponentEnable ("Ipv4Interface", ns3::LOG_LEVEL_ALL);
+//  LogComponentEnable ("Ipv4L3Protocol", ns3::LOG_LEVEL_ALL);
+//  LogComponentEnable ("Ipv4", ns3::LOG_LEVEL_ALL);
+//  LogComponentEnable ("NetDevice", ns3::LOG_LEVEL_ALL);
+//  LogComponentEnable ("ArpL3Protocol", ns3::LOG_LEVEL_ALL);
+//  LogComponentEnable ("PointToPointChannel", ns3::LOG_LEVEL_ALL);
+//  LogComponentEnable ("PointToPointNetDevice", ns3::LOG_LEVEL_ALL);
 
   std::string phyMode ("S1gOfdmRate0_30MbpsBW1MHz");
-  uint32_t packetSize = 100; // bytes
+  uint32_t packetSize = 20; // bytes
   uint32_t numPackets = 10000;
-  Time interval = MicroSeconds(1000);
+  Time interval = MicroSeconds(100000);
 
-  int n_ap = 2;
-  int n_sta = 2;
-  bool verbose = true;
+  int n_ap = 4;
+  int n_sta = 10;
+  bool verbose = false;
 
   CommandLine cmd (__FILE__);
   cmd.AddValue ("phyMode", "Wifi Phy mode", phyMode);
@@ -86,19 +87,22 @@ int main (int argc, char *argv[])
 
   MobilityHelper mobility_ap;
   Ptr<ListPositionAllocator> positionAlloc_ap = CreateObject<ListPositionAllocator> ();
-  for (int i = 0; i < n_ap; ++i) {
-    positionAlloc_ap->Add (Vector (100 * (i % 2 == 0 ? -1 : 1), 0.0, 0.0));
-  }
+  positionAlloc_ap->Add (Vector(500,500,0.0));
+  positionAlloc_ap->Add (Vector(-500,500,0.0));
+  positionAlloc_ap->Add (Vector(500,-500,0.0));
+  positionAlloc_ap->Add (Vector(-500,-500,0.0));
   mobility_ap.SetPositionAllocator (positionAlloc_ap);
   mobility_ap.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
   mobility_ap.Install (ap_nodes);
 
 
   MobilityHelper mobility_sta;
-  Ptr<ListPositionAllocator> positionAlloc_sta = CreateObject<ListPositionAllocator> ();
-  for (int i = 0; i < n_sta; ++i) {
-    positionAlloc_sta->Add (Vector (100 * (i % 2 == 0 ? -1 : 1), 0.0, 0.0));
-  }
+  Ptr<RandomRectanglePositionAllocator> positionAlloc_sta = CreateObject<RandomRectanglePositionAllocator> ();
+  Ptr<UniformRandomVariable> rnd = CreateObject<UniformRandomVariable> ();
+  rnd->SetAttribute("Min", DoubleValue(-1000));
+  rnd->SetAttribute("Max", DoubleValue(1000));
+  positionAlloc_sta->SetX(rnd);
+  positionAlloc_sta->SetY(rnd);
   mobility_sta.SetPositionAllocator (positionAlloc_sta);
   mobility_sta.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
   mobility_sta.Install (sta_nodes);
@@ -129,8 +133,8 @@ int main (int argc, char *argv[])
   WifiMacHelper wifiMac;
   wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager",
                                 "DataMode", StringValue (phyMode),
-                                "MaxSsrc", UintegerValue(10),
-                                "MaxSlrc", UintegerValue(10),
+                                "MaxSsrc", UintegerValue(1),
+                                "MaxSlrc", UintegerValue(1),
                                 "ControlMode", StringValue (phyMode));
 
   // Setup the rest of the MAC
@@ -189,7 +193,8 @@ int main (int argc, char *argv[])
     uint16_t port = i + port_off_set;
     Ptr<UdpServer> r = CreateObject<UdpServer> ();
     r->SetAttribute("Port",UintegerValue (port));
-    r->SetStartTime(Seconds (1));
+    r->SetStartTime(Seconds (10));
+    r->SetStopTime(Seconds (11));
     server_node.Get(0)->AddApplication(r);
     ServerApps.Add(r);
   }
@@ -201,7 +206,31 @@ int main (int argc, char *argv[])
     s->SetAttribute("MaxPackets",UintegerValue (numPackets));
     s->SetAttribute("Interval",TimeValue(interval));
     s->SetAttribute("PacketSize",UintegerValue (packetSize));
-    s->SetStartTime(Seconds (1+DoubleValue(interval.GetSeconds()*i).Get()/DoubleValue(n_sta).Get()));
+    s->SetStartTime(Seconds (10));
+    s->SetStopTime(Seconds (11));
+    sta_nodes.Get(i)->AddApplication(s);
+  }
+
+  port_off_set = 2000;
+  for (int i = 0; i < n_sta; ++i) {
+    uint16_t port = i + port_off_set;
+    Ptr<UdpServer> r = CreateObject<UdpServer> ();
+    r->SetAttribute("Port",UintegerValue (port));
+    r->SetStartTime(Seconds (1));
+    r->SetStopTime(Seconds (3));
+    server_node.Get(0)->AddApplication(r);
+  }
+
+  for (int i = 0; i < n_sta; ++i) {
+    uint16_t port = i + port_off_set;
+    Ptr<UdpClient> s = CreateObject<UdpClient> ();
+    s->SetRemote(server_to_gate_intf.GetAddress(0),port);
+    s->SetAttribute("MaxPackets",UintegerValue (numPackets));
+    s->SetAttribute("Interval",TimeValue(MilliSeconds(1)));
+    s->SetAttribute("IsPoisson",BooleanValue(false));
+    s->SetAttribute("PacketSize",UintegerValue (packetSize));
+    s->SetStartTime(Seconds (1));
+    s->SetStopTime(Seconds (3));
     sta_nodes.Get(i)->AddApplication(s);
   }
 
@@ -222,13 +251,15 @@ int main (int argc, char *argv[])
     sta_r->AddHostRouteTo (server_to_gate_intf.GetAddress(1),"10.2.0.1",staInterface.Get(i).second);
   }
 
-  Simulator::Stop (Seconds (1.5));
+  Simulator::Stop (Seconds (11.001));
 
   Simulator::Run ();
   for (int i = 0; i < n_sta; ++i) {
     auto r = ServerApps.Get(i);
-    std::cout<< " packets received " << DynamicCast<UdpServer>(r)->GetReceived() << std::endl;
-    std::cout<< "bits received " << DynamicCast<UdpServer>(r)->GetReceived() * (packetSize + UDP_IP_WIFI_HEADER_SIZE) * 8 << std::endl;
+    std::cout<< "STA: " << i << ", X-Y: " << sta_nodes.Get(i)->GetObject<MobilityModel>()->GetPosition().x << "\t," << sta_nodes.Get(i)->GetObject<MobilityModel>()->GetPosition().y << std::endl;
+    std::cout<< "   packets received " << DynamicCast<UdpServer>(r)->GetReceived() << std::endl;
+    std::cout<< "   bits received " << DynamicCast<UdpServer>(r)->GetReceived() * (packetSize + UDP_IP_WIFI_HEADER_SIZE) * 8 << std::endl;
+    std::cout<< "   aoi received " << DynamicCast<UdpServer>(r)->GetLastAoI_us() << std::endl;
   }
   std::cout<< "server ip: " << server_to_gate_intf.GetAddress(0) << std::endl;
   std::cout<< "server ip: " << server_to_gate_intf.GetAddress(1) << std::endl;

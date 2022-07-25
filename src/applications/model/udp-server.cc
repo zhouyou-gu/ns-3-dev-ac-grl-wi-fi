@@ -120,7 +120,7 @@ void
 UdpServer::StartApplication (void)
 {
   NS_LOG_FUNCTION (this);
-
+  m_last_received_packet_sending_time = Simulator::Now();
   if (m_socket == 0)
     {
       TypeId tid = TypeId::LookupByName ("ns3::UdpSocketFactory");
@@ -155,11 +155,15 @@ void
 UdpServer::StopApplication ()
 {
   NS_LOG_FUNCTION (this);
-
+  Time r = Simulator::Now() - m_last_received_packet_sending_time;
+  m_aoi_area += (double) (r.GetMicroSeconds() * r.GetMicroSeconds()) / 2;
+  m_mean_aoi = m_aoi_area / (double) (m_stopTime.GetMicroSeconds() - m_startTime.GetMicroSeconds());
+  m_delay_avg = m_delay_sum / (double) m_received;
   if (m_socket != 0)
     {
       m_socket->SetRecvCallback (MakeNullCallback<void, Ptr<Socket> > ());
     }
+  m_is_stopped = true;
 }
 
 void
@@ -203,8 +207,43 @@ UdpServer::HandleRead (Ptr<Socket> socket)
 
           m_lossCounter.NotifyReceived (currentSequenceNumber);
           m_received++;
+          Time interval = seqTs.GetTs () - m_last_received_packet_sending_time;
+          Time p_delay = Simulator::Now () - seqTs.GetTs ();
+          double aoi_a_delta = 1./2. *  (double) ( interval.GetMicroSeconds() * interval.GetMicroSeconds()) +  (double)  (interval.GetMicroSeconds() * p_delay.GetMicroSeconds());
+          m_aoi_area += aoi_a_delta;
+          m_last_received_packet_sending_time = seqTs.GetTs ();
+          m_delay_sum += p_delay.GetMicroSeconds();
+
+          NS_LOG_INFO ("AoI UDP: Port " << m_port);
+          NS_LOG_INFO ("AoI UDP: Packet sending interval (us) " << interval.GetMicroSeconds());
+          NS_LOG_INFO ("AoI UDP: Packet delay (us) " << p_delay.GetMicroSeconds());
+          NS_LOG_INFO ("AoI UDP: AoI area (us^2) " << m_aoi_area);
+          NS_LOG_INFO ("AoI UDP: AoI area delta (us^2) " << aoi_a_delta);
+          NS_LOG_INFO ("AoI UDP: Delay sum (us) " << m_delay_sum);
         }
     }
+}
+
+double
+UdpServer::GetLastAoI_us()
+{
+  NS_LOG_FUNCTION (this);
+  if (! m_is_stopped)
+  {
+    NS_FATAL_ERROR("aoi should be calculated after the app is stopped");
+  }
+  return m_mean_aoi;
+}
+
+double
+UdpServer::GetAvgDelay_us()
+{
+  NS_LOG_FUNCTION (this);
+  if (! m_is_stopped)
+  {
+    NS_FATAL_ERROR("Delay should be calculated after the app is stopped");
+  }
+  return m_delay_avg;
 }
 
 } // Namespace ns3
