@@ -87,7 +87,7 @@ int main (int argc, char *argv[])
   MobilityHelper mobility_ap;
   Ptr<ListPositionAllocator> positionAlloc_ap = CreateObject<ListPositionAllocator> ();
   for (int i = 0; i < n_ap; ++i) {
-    positionAlloc_ap->Add (Vector (100 * (i % 2 == 0 ? -1 : 1), 0.0, 0.0));
+    positionAlloc_ap->Add (Vector (500 * (i % 2 == 0 ? -1 : 1), 0.0, 0.0));
   }
   mobility_ap.SetPositionAllocator (positionAlloc_ap);
   mobility_ap.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
@@ -97,7 +97,7 @@ int main (int argc, char *argv[])
   MobilityHelper mobility_sta;
   Ptr<ListPositionAllocator> positionAlloc_sta = CreateObject<ListPositionAllocator> ();
   for (int i = 0; i < n_sta; ++i) {
-    positionAlloc_sta->Add (Vector (100 * (i % 2 == 0 ? -1 : 1), 0.0, 0.0));
+    positionAlloc_sta->Add (Vector ((500 +500* sqrt(500)) * (i % 2 == 0 ? -1 : 1), 0.0, 0.0));
   }
   mobility_sta.SetPositionAllocator (positionAlloc_sta);
   mobility_sta.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
@@ -129,8 +129,8 @@ int main (int argc, char *argv[])
   WifiMacHelper wifiMac;
   wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager",
                                 "DataMode", StringValue (phyMode),
-                                "MaxSsrc", UintegerValue(10),
-                                "MaxSlrc", UintegerValue(10),
+                                "MaxSsrc", UintegerValue(1),
+                                "MaxSlrc", UintegerValue(1),
                                 "ControlMode", StringValue (phyMode));
 
   // Setup the rest of the MAC
@@ -222,7 +222,7 @@ int main (int argc, char *argv[])
     sta_r->AddHostRouteTo (server_to_gate_intf.GetAddress(1),"10.2.0.1",staInterface.Get(i).second);
   }
 
-  Simulator::Stop (Seconds (1.5));
+  Simulator::Stop (Seconds (2));
 
   Simulator::Run ();
   for (int i = 0; i < n_sta; ++i) {

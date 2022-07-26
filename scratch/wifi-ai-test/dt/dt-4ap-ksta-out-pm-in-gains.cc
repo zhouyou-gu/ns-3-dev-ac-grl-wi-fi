@@ -17,6 +17,7 @@
 #include "ns3/boolean.h"
 #include "ns3/ipv4-global-routing-helper.h"
 
+#include "mygym.h"
 
 #define UDP_IP_WIFI_HEADER_SIZE 64
 
@@ -26,13 +27,14 @@ NS_LOG_COMPONENT_DEFINE ("wifi-test");
 
 int main (int argc, char *argv[])
 {
+  RngSeedManager::SetSeed (2);
   LogComponentEnableAll (LOG_PREFIX_TIME);
   LogComponentEnableAll (LOG_PREFIX_NODE);
 //
   LogComponentEnable ("wifi-test", LOG_LEVEL_INFO);
 //
-  LogComponentEnable ("UdpServer", ns3::LOG_LEVEL_ALL);
-  LogComponentEnable ("UdpClient", ns3::LOG_LEVEL_ALL);
+//  LogComponentEnable ("UdpServer", ns3::LOG_LEVEL_ALL);
+//  LogComponentEnable ("UdpClient", ns3::LOG_LEVEL_ALL);
 //  LogComponentEnable ("UdpSocketImpl", ns3::LOG_LEVEL_ALL);
 //  LogComponentEnable ("Ipv4Interface", ns3::LOG_LEVEL_ALL);
 //  LogComponentEnable ("Ipv4L3Protocol", ns3::LOG_LEVEL_ALL);
@@ -49,6 +51,13 @@ int main (int argc, char *argv[])
 
   int n_ap = 4;
   int n_sta = 10;
+
+  int time_for_arp_start = 1;
+  int time_for_arp_end = 5;
+
+  int time_for_test_start = 10;
+  int time_for_test_end = 20;
+
   bool verbose = false;
 
   CommandLine cmd (__FILE__);
@@ -86,22 +95,15 @@ int main (int argc, char *argv[])
 
   MobilityHelper mobility_ap;
   Ptr<ListPositionAllocator> positionAlloc_ap = CreateObject<ListPositionAllocator> ();
-  positionAlloc_ap->Add (Vector(500,500,0.0));
-  positionAlloc_ap->Add (Vector(-500,500,0.0));
-  positionAlloc_ap->Add (Vector(500,-500,0.0));
-  positionAlloc_ap->Add (Vector(-500,-500,0.0));
+  positionAlloc_ap->Add (Vector(0,0,0.0));
   mobility_ap.SetPositionAllocator (positionAlloc_ap);
   mobility_ap.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
   mobility_ap.Install (ap_nodes);
 
 
   MobilityHelper mobility_sta;
-  Ptr<RandomRectanglePositionAllocator> positionAlloc_sta = CreateObject<RandomRectanglePositionAllocator> ();
-  Ptr<UniformRandomVariable> rnd = CreateObject<UniformRandomVariable> ();
-  rnd->SetAttribute("Min", DoubleValue(-1000));
-  rnd->SetAttribute("Max", DoubleValue(1000));
-  positionAlloc_sta->SetX(rnd);
-  positionAlloc_sta->SetY(rnd);
+  Ptr<ListPositionAllocator> positionAlloc_sta = CreateObject<ListPositionAllocator> ();
+  positionAlloc_sta->Add (Vector(0,0,0.0));
   mobility_sta.SetPositionAllocator (positionAlloc_sta);
   mobility_sta.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
   mobility_sta.Install (sta_nodes);
@@ -121,19 +123,29 @@ int main (int argc, char *argv[])
   wifiPhy.SetPcapDataLinkType (WifiPhyHelper::DLT_IEEE802_11_RADIO);
 
 
-  YansWifiChannelHelper wifiChannel;
-  wifiChannel.SetPropagationDelay ("ns3::ConstantSpeedPropagationDelayModel");
-  wifiChannel.AddPropagationLoss ("ns3::FriisPropagationLossModel",
-                                  "Frequency", DoubleValue (1e9));
+  Ptr<MatrixPropagationLossModel> lossModel = CreateObject<MatrixPropagationLossModel> ();
+  lossModel->SetDefaultLoss (200); // set default loss to 200 dB (no link)
 
-  wifiPhy.SetChannel (wifiChannel.Create());
+  Ptr<YansWifiChannel> yanswc = CreateObject <YansWifiChannel> ();
+  yanswc->SetPropagationLossModel (lossModel);
+  yanswc->SetPropagationDelayModel (CreateObject <ConstantSpeedPropagationDelayModel> ());
+  wifiPhy.SetChannel (yanswc);
+
+  uint32_t openGymPort = 5002;
+  Ptr<OpenGymInterface> openGymInterface = CreateObject<OpenGymInterface> (openGymPort);
+  Ptr<MyGymEnv> myGymEnv = CreateObject<MyGymEnv> (n_ap,n_sta, lm_ptr);
+  myGymEnv->m_staNodes.Add(sta_nodes);
+  myGymEnv->m_apNodes.Add(ap_nodes);
+  myGymEnv->SetOpenGymInterface(openGymInterface);
+  myGymEnv->Notify();
+
 
   // Add a mac and disable rate control
   WifiMacHelper wifiMac;
   wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager",
                                 "DataMode", StringValue (phyMode),
-                                "MaxSsrc", UintegerValue(2),
-                                "MaxSlrc", UintegerValue(2),
+                                "MaxSsrc", UintegerValue(1),
+                                "MaxSlrc", UintegerValue(1),
                                 "ControlMode", StringValue (phyMode));
 
   // Setup the rest of the MAC
@@ -193,7 +205,7 @@ int main (int argc, char *argv[])
     Ptr<UdpServer> r = CreateObject<UdpServer> ();
     r->SetAttribute("Port",UintegerValue (port));
     r->SetStartTime(Seconds (10));
-    r->SetStopTime(Seconds (11));
+    r->SetStopTime(Seconds (20));
     server_node.Get(0)->AddApplication(r);
     ServerApps.Add(r);
   }
@@ -206,7 +218,7 @@ int main (int argc, char *argv[])
     s->SetAttribute("Interval",TimeValue(interval));
     s->SetAttribute("PacketSize",UintegerValue (packetSize));
     s->SetStartTime(Seconds (10));
-    s->SetStopTime(Seconds (11));
+    s->SetStopTime(Seconds (20));
     sta_nodes.Get(i)->AddApplication(s);
   }
 
@@ -216,7 +228,7 @@ int main (int argc, char *argv[])
     Ptr<UdpServer> r = CreateObject<UdpServer> ();
     r->SetAttribute("Port",UintegerValue (port));
     r->SetStartTime(Seconds (1));
-    r->SetStopTime(Seconds (3));
+    r->SetStopTime(Seconds (5));
     server_node.Get(0)->AddApplication(r);
   }
 
@@ -229,7 +241,7 @@ int main (int argc, char *argv[])
     s->SetAttribute("IsPoisson",BooleanValue(false));
     s->SetAttribute("PacketSize",UintegerValue (packetSize));
     s->SetStartTime(Seconds (1));
-    s->SetStopTime(Seconds (3));
+    s->SetStopTime(Seconds (5));
     sta_nodes.Get(i)->AddApplication(s);
   }
 
@@ -250,7 +262,7 @@ int main (int argc, char *argv[])
     sta_r->AddHostRouteTo (server_to_gate_intf.GetAddress(1),"10.2.0.1",staInterface.Get(i).second);
   }
 
-  Simulator::Stop (Seconds (11.001));
+  Simulator::Stop (Seconds (20.001));
 
   Simulator::Run ();
   for (int i = 0; i < n_sta; ++i) {
@@ -263,6 +275,20 @@ int main (int argc, char *argv[])
   std::cout<< "server ip: " << server_to_gate_intf.GetAddress(0) << std::endl;
   std::cout<< "server ip: " << server_to_gate_intf.GetAddress(1) << std::endl;
 
+  uint32_t openGymPort = 5002;
+  Ptr<OpenGymInterface> openGymInterface = CreateObject<OpenGymInterface> (openGymPort);
+  PointerValue lm;
+  yanswc->GetAttribute("PropagationLossModel",lm);
+  Ptr<PropagationLossModel> lm_ptr;
+  Ptr<Object> o = lm.GetObject();
+  lm_ptr = DynamicCast<PropagationLossModel>(o);
+  Ptr<MyGymEnv> myGymEnv = CreateObject<MyGymEnv> (n_ap,n_sta, lm_ptr);
+  myGymEnv->m_staNodes.Add(sta_nodes);
+  myGymEnv->m_apNodes.Add(ap_nodes);
+  myGymEnv->m_serverApps.Add(ServerApps);
+  myGymEnv->SetOpenGymInterface(openGymInterface);
+  myGymEnv->Notify();
+  myGymEnv->NotifySimulationEnd();
   Simulator::Destroy ();
 
   return 0;

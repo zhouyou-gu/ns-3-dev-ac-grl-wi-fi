@@ -230,7 +230,7 @@ UdpServer::GetLastAoI_us()
   NS_LOG_FUNCTION (this);
   if (! m_is_stopped)
   {
-    NS_FATAL_ERROR("aoi should be calculated after the app is stopped");
+    NS_LOG_UNCOND("aoi should be calculated after the app is stopped");
   }
   return m_mean_aoi;
 }
@@ -241,7 +241,7 @@ UdpServer::GetAvgDelay_us()
   NS_LOG_FUNCTION (this);
   if (! m_is_stopped)
   {
-    NS_FATAL_ERROR("Delay should be calculated after the app is stopped");
+    NS_LOG_UNCOND("Delay should be calculated after the app is stopped");
   }
   return m_delay_avg;
 }
