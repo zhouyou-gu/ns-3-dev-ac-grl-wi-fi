@@ -27,7 +27,6 @@ NS_LOG_COMPONENT_DEFINE ("wifi-test");
 
 int main (int argc, char *argv[])
 {
-  RngSeedManager::SetSeed (2);
   LogComponentEnableAll (LOG_PREFIX_TIME);
   LogComponentEnableAll (LOG_PREFIX_NODE);
 //
@@ -52,6 +51,9 @@ int main (int argc, char *argv[])
   int n_ap = 4;
   int n_sta = 10;
 
+  uint32_t simSeed = 1;
+  uint32_t openGymPort = 5000;
+
   int time_for_arp_start = 1;
   int time_for_arp_end = 5;
 
@@ -67,7 +69,12 @@ int main (int argc, char *argv[])
   cmd.AddValue ("interval", "interval between packets", interval);
   cmd.AddValue ("n_ap", "number of aps", n_ap);
   cmd.AddValue ("n_sta", "number of stations", n_sta);
+  cmd.AddValue ("openGymPort", "Port number for OpenGym env. Default: 5555", openGymPort);
+  cmd.AddValue ("simSeed", "Seed for random generator. Default: 1", simSeed);
   cmd.Parse (argc, argv);
+  RngSeedManager::SetSeed (1);
+  RngSeedManager::SetRun(simSeed);
+
 
   // Fix non-unicast data rate to be the same as that of unicast
   Config::SetDefault ("ns3::WifiRemoteStationManager::NonUnicastMode",
@@ -130,12 +137,12 @@ int main (int argc, char *argv[])
   wifiPhy.SetPcapDataLinkType (WifiPhyHelper::DLT_IEEE802_11_RADIO);
 
 
-  YansWifiChannelHelper wifiChannel;
-  wifiChannel.SetPropagationDelay ("ns3::ConstantSpeedPropagationDelayModel");
-  wifiChannel.AddPropagationLoss ("ns3::FriisPropagationLossModel",
-                                  "Frequency", DoubleValue (1e9));
+  Ptr<FriisPropagationLossModel> lossModel = CreateObject<FriisPropagationLossModel> ();
+  lossModel->SetFrequency(1e9);
 
-  Ptr<YansWifiChannel> yanswc = wifiChannel.Create();
+  Ptr<YansWifiChannel> yanswc = CreateObject <YansWifiChannel> ();
+  yanswc->SetPropagationLossModel (lossModel);
+  yanswc->SetPropagationDelayModel (CreateObject <ConstantSpeedPropagationDelayModel> ());
   wifiPhy.SetChannel (yanswc);
 
   // Add a mac and disable rate control
@@ -202,8 +209,8 @@ int main (int argc, char *argv[])
     uint16_t port = i + port_off_set;
     Ptr<UdpServer> r = CreateObject<UdpServer> ();
     r->SetAttribute("Port",UintegerValue (port));
-    r->SetStartTime(Seconds (10));
-    r->SetStopTime(Seconds (20));
+    r->SetStartTime(Seconds (time_for_test_start));
+    r->SetStopTime(Seconds (time_for_test_end));
     server_node.Get(0)->AddApplication(r);
     ServerApps.Add(r);
   }
@@ -215,8 +222,8 @@ int main (int argc, char *argv[])
     s->SetAttribute("MaxPackets",UintegerValue (numPackets));
     s->SetAttribute("Interval",TimeValue(interval));
     s->SetAttribute("PacketSize",UintegerValue (packetSize));
-    s->SetStartTime(Seconds (10));
-    s->SetStopTime(Seconds (20));
+    s->SetStartTime(Seconds (time_for_test_start));
+    s->SetStopTime(Seconds (time_for_test_end));
     sta_nodes.Get(i)->AddApplication(s);
   }
 
@@ -225,8 +232,8 @@ int main (int argc, char *argv[])
     uint16_t port = i + port_off_set;
     Ptr<UdpServer> r = CreateObject<UdpServer> ();
     r->SetAttribute("Port",UintegerValue (port));
-    r->SetStartTime(Seconds (1));
-    r->SetStopTime(Seconds (5));
+    r->SetStartTime(Seconds (time_for_arp_start));
+    r->SetStopTime(Seconds (time_for_arp_end));
     server_node.Get(0)->AddApplication(r);
   }
 
@@ -238,8 +245,8 @@ int main (int argc, char *argv[])
     s->SetAttribute("Interval",TimeValue(MilliSeconds(1)));
     s->SetAttribute("IsPoisson",BooleanValue(false));
     s->SetAttribute("PacketSize",UintegerValue (packetSize));
-    s->SetStartTime(Seconds (1));
-    s->SetStopTime(Seconds (5));
+    s->SetStartTime(Seconds (time_for_arp_start));
+    s->SetStopTime(Seconds (time_for_arp_end));
     sta_nodes.Get(i)->AddApplication(s);
   }
 
@@ -273,14 +280,8 @@ int main (int argc, char *argv[])
   std::cout<< "server ip: " << server_to_gate_intf.GetAddress(0) << std::endl;
   std::cout<< "server ip: " << server_to_gate_intf.GetAddress(1) << std::endl;
 
-  uint32_t openGymPort = 5555;
   Ptr<OpenGymInterface> openGymInterface = CreateObject<OpenGymInterface> (openGymPort);
-  PointerValue lm;
-  yanswc->GetAttribute("PropagationLossModel",lm);
-  Ptr<PropagationLossModel> lm_ptr;
-  Ptr<Object> o = lm.GetObject();
-  lm_ptr = DynamicCast<PropagationLossModel>(o);
-  Ptr<MyGymEnv> myGymEnv = CreateObject<MyGymEnv> (n_ap,n_sta, lm_ptr);
+  Ptr<MyGymEnv> myGymEnv = CreateObject<MyGymEnv> (n_ap, n_sta, lossModel);
   myGymEnv->m_staNodes.Add(sta_nodes);
   myGymEnv->m_apNodes.Add(ap_nodes);
   myGymEnv->m_serverApps.Add(ServerApps);
