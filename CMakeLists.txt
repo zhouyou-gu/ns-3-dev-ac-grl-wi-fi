@@ -97,7 +97,7 @@ option(NS3_WARNINGS_AS_ERRORS
 set(NS3_ENABLED_MODULES ""
     CACHE STRING "List of modules to enable (e.g. core;network;internet)"
 )
-set(NS3_DISABLED_MODULES "" lte;wimax;wave
+set(NS3_DISABLED_MODULES ""
     CACHE STRING "List of modules to disable (e.g. lte;wimax;wave)"
 )
 
