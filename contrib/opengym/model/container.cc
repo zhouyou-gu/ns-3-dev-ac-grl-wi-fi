@@ -396,7 +396,7 @@ OpenGymDictContainer::Get(std::string key)
   Ptr<OpenGymDataContainer> data;
   std::map< std::string, Ptr<OpenGymDataContainer> >::iterator it = m_dict.find(key);
   if ( it != m_dict.end() ) {
-    data = it->second;
+    data = m_dict.find(key)->second;
   }
   return data;
 }
@@ -413,7 +413,7 @@ OpenGymDictContainer::Print(std::ostream& where) const
     std::string name = it->first;
     Ptr<OpenGymDataContainer> subSpace = it->second;
 
-    where << name << "=";
+    where << name << "=" << subSpace->GetInstanceTypeId();
     subSpace->Print(where);
 
     it2 = it;

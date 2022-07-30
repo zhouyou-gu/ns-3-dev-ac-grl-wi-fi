@@ -62,12 +62,12 @@ MyGymEnv::GetObservationSpace()
 {
 
   std::vector<uint32_t> shape_aoi = {(uint32_t)m_n_sta,};
-  std::string dtype = TypeNameGet<double> ();
+  std::string dtype = TypeNameGet<float> ();
   Ptr<OpenGymBoxSpace> aoi = CreateObject<OpenGymBoxSpace> (0., 1000000000., shape_aoi, dtype);
   Ptr<OpenGymDictSpace> space = CreateObject<OpenGymDictSpace> ();
   space->Add("aoi", aoi);
 
-  NS_LOG_UNCOND ("MyGetObservationSpace: " << space);
+//  NS_LOG_UNCOND ("MyGetObservationSpace: " << space);
   return space;
 }
 
@@ -79,20 +79,20 @@ MyGymEnv::GetActionSpace()
 {
   float low = -1000.0;
   float high = 0.0;
-  std::vector<uint32_t> shape_gain_ap_ap= {(uint32_t)m_n_ap * (uint32_t)m_n_ap,};
-  std::vector<uint32_t> shape_gain_sta_ap= {(uint32_t)m_n_ap * (uint32_t)m_n_sta,};
-  std::vector<uint32_t> shape_gain_sta_sta= {(uint32_t)m_n_sta * (uint32_t)m_n_sta,};
-  std::string dtype = TypeNameGet<double> ();
-  Ptr<OpenGymBoxSpace> gain_ap_ap = CreateObject<OpenGymBoxSpace> (low, high, shape_gain_ap_ap, dtype);
-  Ptr<OpenGymBoxSpace> gain_sta_ap = CreateObject<OpenGymBoxSpace> (low, high, shape_gain_sta_ap, dtype);
-  Ptr<OpenGymBoxSpace> gain_sta_sta = CreateObject<OpenGymBoxSpace> (low, high, shape_gain_sta_sta, dtype);
+  std::vector<uint32_t> shape_loss_ap_ap= {(uint32_t)m_n_ap * (uint32_t)m_n_ap,};
+  std::vector<uint32_t> shape_loss_sta_ap= {(uint32_t)m_n_ap * (uint32_t)m_n_sta,};
+  std::vector<uint32_t> shape_loss_sta_sta= {(uint32_t)m_n_sta * (uint32_t)m_n_sta,};
+  std::string dtype = TypeNameGet<float> ();
+  Ptr<OpenGymBoxSpace> loss_ap_ap = CreateObject<OpenGymBoxSpace> (low, high, shape_loss_ap_ap, dtype);
+  Ptr<OpenGymBoxSpace> loss_sta_ap = CreateObject<OpenGymBoxSpace> (low, high, shape_loss_sta_ap, dtype);
+  Ptr<OpenGymBoxSpace> loss_sta_sta = CreateObject<OpenGymBoxSpace> (low, high, shape_loss_sta_sta, dtype);
   Ptr<OpenGymDictSpace> space = CreateObject<OpenGymDictSpace> ();
 
-  space->Add("gain_ap_ap", gain_ap_ap);
-  space->Add("gain_sta_ap", gain_sta_ap);
-  space->Add("gain_sta_sta", gain_sta_sta);
+  space->Add("loss_ap_ap", loss_ap_ap);
+  space->Add("loss_sta_ap", loss_sta_ap);
+  space->Add("loss_sta_sta", loss_sta_sta);
 
-  NS_LOG_UNCOND ("MyGetObservationSpace: " << space);
+//  NS_LOG_UNCOND ("MyGetObservationSpace: " << space);
   return space;
 }
 
@@ -102,7 +102,7 @@ Define game over condition
 bool
 MyGymEnv::GetGameOver()
 {
-  NS_LOG_UNCOND ("MyGetGameOver: " << Simulator::IsFinished());
+//  NS_LOG_UNCOND ("MyGetGameOver: " << Simulator::IsFinished());
   return Simulator::IsFinished();
 }
 
@@ -114,10 +114,10 @@ MyGymEnv::GetObservation()
 {
 
   std::vector<uint32_t> shape_pm = {(uint32_t)m_n_sta,};
-  Ptr<OpenGymBoxContainer<double> > pm = CreateObject<OpenGymBoxContainer<double> >(shape_pm);
+  Ptr<OpenGymBoxContainer<float> > pm = CreateObject<OpenGymBoxContainer<float> >(shape_pm);
   if (is_simulation_end){
     for (uint32_t j = 0; j < m_n_sta; j++){
-      double aoi = DynamicCast<UdpServer>(m_serverApps.Get(j))->GetLastAoI_us();
+      float aoi = DynamicCast<UdpServer>(m_serverApps.Get(j))->GetLastAoI_us();
       pm->AddValue(aoi);
     }
   } else {
@@ -130,9 +130,9 @@ MyGymEnv::GetObservation()
   data->Add("aoi",pm);
 
   // Print data from tuple
-  Ptr<OpenGymBoxContainer<double> > aoi = DynamicCast<OpenGymBoxContainer<double> >(data->Get("aoi"));
-  NS_LOG_UNCOND ("MyGetObservation: " << data);
-  NS_LOG_UNCOND ("---" << aoi);
+//  Ptr<OpenGymBoxContainer<float> > aoi = DynamicCast<OpenGymBoxContainer<float> >(data->Get("aoi"));
+//  NS_LOG_UNCOND ("MyGetObservation: " << data);
+//  NS_LOG_UNCOND ("---" << aoi);
 
   return data;
 }
@@ -154,7 +154,7 @@ MyGymEnv::GetExtraInfo()
 {
   std::string myInfo = "testInfo";
   myInfo += "|123";
-  NS_LOG_UNCOND("MyGetExtraInfo: " << myInfo);
+//  NS_LOG_UNCOND("MyGetExtraInfo: " << myInfo);
   return myInfo;
 }
 
@@ -166,16 +166,16 @@ MyGymEnv::ExecuteActions(Ptr<OpenGymDataContainer> action)
 {
   Ptr<MatrixPropagationLossModel> lm = DynamicCast<MatrixPropagationLossModel>(m_loss_model);
   Ptr<OpenGymDictContainer> dict = DynamicCast<OpenGymDictContainer>(action);
-  Ptr<OpenGymBoxContainer<double> > gain_ap_ap = DynamicCast<OpenGymBoxContainer<double> >(dict->Get("gain_ap_ap"));
-  Ptr<OpenGymBoxContainer<double> > gain_sta_ap = DynamicCast<OpenGymBoxContainer<double> >(dict->Get("gain_sta_ap"));
-  Ptr<OpenGymBoxContainer<double> > gain_sta_sta = DynamicCast<OpenGymBoxContainer<double> >(dict->Get("gain_sta_sta"));
+  Ptr<OpenGymBoxContainer<float> > loss_ap_ap = DynamicCast<OpenGymBoxContainer<float> >(dict->Get("loss_ap_ap"));
+  Ptr<OpenGymBoxContainer<float> > loss_sta_ap = DynamicCast<OpenGymBoxContainer<float> >(dict->Get("loss_sta_ap"));
+  Ptr<OpenGymBoxContainer<float> > loss_sta_sta = DynamicCast<OpenGymBoxContainer<float> >(dict->Get("loss_sta_sta"));
 
   int counter = 0;
 
 
   for (uint32_t i = 0; i < m_n_ap; i++){
     for (uint32_t j = 0; j < m_n_ap; j++){
-      lm->SetLoss (m_apNodes.Get (i)->GetObject<MobilityModel> (), m_apNodes.Get (j)->GetObject<MobilityModel> (), gain_ap_ap->GetValue(counter),
+      lm->SetLoss (m_apNodes.Get (i)->GetObject<MobilityModel> (), m_apNodes.Get (j)->GetObject<MobilityModel> (), -loss_ap_ap->GetValue(counter),
                    false);
       counter++;
     }
@@ -184,8 +184,8 @@ MyGymEnv::ExecuteActions(Ptr<OpenGymDataContainer> action)
 
   for (uint32_t i = 0; i < m_n_ap; i++){
     for (uint32_t j = 0; j < m_n_sta; j++){
-      lm->SetLoss (m_apNodes.Get (i)->GetObject<MobilityModel> (), m_staNodes.Get (j)->GetObject<MobilityModel> (), gain_sta_ap->GetValue(counter),
-                   false);
+      lm->SetLoss (m_apNodes.Get (i)->GetObject<MobilityModel> (), m_staNodes.Get (j)->GetObject<MobilityModel> (), -loss_sta_ap->GetValue(counter),
+                     true);
       counter++;
     }
   }
@@ -193,7 +193,7 @@ MyGymEnv::ExecuteActions(Ptr<OpenGymDataContainer> action)
 
   for (uint32_t i = 0; i < m_n_sta; i++){
     for (uint32_t j = 0; j < m_n_sta; j++){
-      lm->SetLoss (m_staNodes.Get (i)->GetObject<MobilityModel> (), m_staNodes.Get (j)->GetObject<MobilityModel> (), gain_sta_ap->GetValue(counter),
+      lm->SetLoss (m_staNodes.Get (i)->GetObject<MobilityModel> (), m_staNodes.Get (j)->GetObject<MobilityModel> (), -loss_sta_sta->GetValue(counter),
                    false);
       counter++;
     }

@@ -39,7 +39,7 @@ int main (int argc, char *argv[])
 //  LogComponentEnable ("Ipv4L3Protocol", ns3::LOG_LEVEL_ALL);
 //  LogComponentEnable ("Ipv4", ns3::LOG_LEVEL_ALL);
 //  LogComponentEnable ("NetDevice", ns3::LOG_LEVEL_ALL);
-//  LogComponentEnable ("ArpL3Protocol", ns3::LOG_LEVEL_ALL);
+  LogComponentEnable ("ArpL3Protocol", ns3::LOG_LEVEL_ALL);
 //  LogComponentEnable ("PointToPointChannel", ns3::LOG_LEVEL_ALL);
 //  LogComponentEnable ("PointToPointNetDevice", ns3::LOG_LEVEL_ALL);
 
@@ -52,7 +52,7 @@ int main (int argc, char *argv[])
   int n_sta = 10;
 
   uint32_t simSeed = 1;
-  uint32_t openGymPort = 5000;
+  uint32_t openGymPort = 6000;
 
   int time_for_arp_start = 1;
   int time_for_arp_end = 5;
@@ -100,21 +100,14 @@ int main (int argc, char *argv[])
   stack.Install (sta_nodes);
   Ipv4AddressGenerator::TestMode();
 
-  MobilityHelper mobility_ap;
-  Ptr<ListPositionAllocator> positionAlloc_ap = CreateObject<ListPositionAllocator> ();
-  positionAlloc_ap->Add (Vector(0,0,0.0));
-  mobility_ap.SetPositionAllocator (positionAlloc_ap);
-  mobility_ap.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
-  mobility_ap.Install (ap_nodes);
-
-
-  MobilityHelper mobility_sta;
-  Ptr<ListPositionAllocator> positionAlloc_sta = CreateObject<ListPositionAllocator> ();
-  positionAlloc_sta->Add (Vector(0,0,0.0));
-  mobility_sta.SetPositionAllocator (positionAlloc_sta);
-  mobility_sta.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
-  mobility_sta.Install (sta_nodes);
-
+  for (uint32_t i = 0; i < n_ap; i++)
+    {
+      ap_nodes.Get (i)->AggregateObject (CreateObject<ConstantPositionMobilityModel> ());
+    }
+  for (uint32_t i = 0; i < n_sta; i++)
+    {
+      sta_nodes.Get (i)->AggregateObject (CreateObject<ConstantPositionMobilityModel> ());
+    }
 
   // The below set of helpers will help us to put together the wifi NICs we want
   WifiHelper wifi;
@@ -267,7 +260,9 @@ int main (int argc, char *argv[])
     sta_r->AddHostRouteTo (server_to_gate_intf.GetAddress(1),"10.2.0.1",staInterface.Get(i).second);
   }
 
-  Simulator::Stop (Seconds (20.001));
+  Simulator::Stop (Seconds (time_for_test_end+0.1));
+
+
 
   Simulator::Run ();
   for (int i = 0; i < n_sta; ++i) {
@@ -280,10 +275,31 @@ int main (int argc, char *argv[])
   std::cout<< "server ip: " << server_to_gate_intf.GetAddress(0) << std::endl;
   std::cout<< "server ip: " << server_to_gate_intf.GetAddress(1) << std::endl;
 
-  myGymEnv->m_staNodes.Add(sta_nodes);
-  myGymEnv->m_apNodes.Add(ap_nodes);
+
+  for (uint32_t i = 0; i < n_ap; i++){
+     for (uint32_t j = 0; j < n_sta; j++){
+       auto A = ap_nodes.Get(i)->GetObject<MobilityModel>();
+       auto B = sta_nodes.Get(j)->GetObject<MobilityModel>();
+       std::cout<< "loss_sta_ap: " << lossModel->CalcRxPower(0,B,A) << " "<< lossModel->CalcRxPower(0,A,B) << std::endl;
+     }
+  }
+  for (uint32_t i = 0; i < n_sta; i++){
+     for (uint32_t j = 0; j < n_sta; j++){
+       auto A = sta_nodes.Get(i)->GetObject<MobilityModel>();
+       auto B = sta_nodes.Get(j)->GetObject<MobilityModel>();
+       std::cout<< "loss_sta_sta: " << lossModel->CalcRxPower(0,B,A) << " "<< lossModel->CalcRxPower(0,A,B) << std::endl;
+     }
+  }
+  for (uint32_t i = 0; i < n_ap; i++){
+     for (uint32_t j = 0; j < n_ap; j++){
+       auto A = ap_nodes.Get(i)->GetObject<MobilityModel>();
+       auto B = ap_nodes.Get(j)->GetObject<MobilityModel>();
+       std::cout<< "loss_ap_ap: " << lossModel->CalcRxPower(0,B,A) << " "<< lossModel->CalcRxPower(0,A,B) << std::endl;
+     }
+  }
+
   myGymEnv->m_serverApps.Add(ServerApps);
-  myGymEnv->SetOpenGymInterface(openGymInterface);
+  myGymEnv->is_simulation_end = true;
   myGymEnv->Notify();
   myGymEnv->NotifySimulationEnd();
   Simulator::Destroy ();
