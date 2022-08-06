@@ -273,6 +273,9 @@ InterferenceHelper::GetEnergyDuration (double energyW, WifiSpectrumBand band)
         {
           break;
         }
+      else{
+          NS_LOG_WARN ("GetEnergyDuration:" << now.GetMicroSeconds() << ":" << end.GetMicroSeconds() <<  ":" << WToDbm(noiseInterferenceW) << " - " << WToDbm(energyW));
+      }
     }
   return end > now ? end - now : MicroSeconds (0);
 }
@@ -346,7 +349,7 @@ InterferenceHelper::CalculateSnr (double signal, double noiseInterference, uint1
   double noise = noiseFloor + noiseInterference;
   double snr = signal / noise; //linear scale
   NS_LOG_DEBUG ("bandwidth(MHz)=" << channelWidth << ", signal(W)= " << signal << ", noise(W)=" << noiseFloor << ", interference(W)=" << noiseInterference << ", snr=" << RatioToDb(snr) << "dB");
-  NS_LOG_DEBUG ("bandwidth(MHz)=" << channelWidth << ", signal(dBm)= " << RatioToDb(signal*1000) << ", noise(dBm)=" << RatioToDb(noiseFloor*1000)  << ", interference(dBm)=" << RatioToDb(noiseInterference*1000) << ", snr=" << RatioToDb(snr) << "dB");
+  NS_LOG_WARN ("bandwidth(MHz)=" << channelWidth << ", signal(dBm)= " << WToDbm(signal) << ", noise(dBm)=" << WToDbm(noiseFloor)  << ", interference(dBm)=" << WToDbm(noiseInterference) << ", snr=" << RatioToDb(snr) << "dB");
   if (m_errorRateModel->IsAwgn ())
     {
       double gain = 1;

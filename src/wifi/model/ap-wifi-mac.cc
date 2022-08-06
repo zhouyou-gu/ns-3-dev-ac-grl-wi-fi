@@ -59,6 +59,11 @@ ApWifiMac::GetTypeId (void)
                    MakeTimeAccessor (&ApWifiMac::GetBeaconInterval,
                                      &ApWifiMac::SetBeaconInterval),
                    MakeTimeChecker ())
+    .AddAttribute ("BeaconOffset",
+                   "the starting time of the first beacon to avoid collision",
+                                         TimeValue (MicroSeconds (0)),
+                                         MakeTimeAccessor (&ApWifiMac::m_beaconOffset),
+                                         MakeTimeChecker())
     .AddAttribute ("BeaconJitter",
                    "A uniform random variable to cause the initial beacon starting time (after simulation time 0) "
                    "to be distributed between 0 and the BeaconInterval.",
@@ -67,7 +72,7 @@ ApWifiMac::GetTypeId (void)
                    MakePointerChecker<UniformRandomVariable> ())
     .AddAttribute ("EnableBeaconJitter",
                    "If beacons are enabled, whether to jitter the initial send event.",
-                   BooleanValue (true),
+                   BooleanValue (false),
                    MakeBooleanAccessor (&ApWifiMac::m_enableBeaconJitter),
                    MakeBooleanChecker ())
     .AddAttribute ("BeaconGeneration",
@@ -201,6 +206,21 @@ ApWifiMac::SetBeaconInterval (Time interval)
       NS_FATAL_ERROR ("beacon interval should be smaller then or equal to 65535 * 1024us (802.11 time unit)");
     }
   m_beaconInterval = interval;
+}
+
+
+Time
+ApWifiMac::GetBeaconOffset (void) const
+{
+  NS_LOG_FUNCTION (this);
+  return m_beaconOffset;
+}
+
+void
+ApWifiMac::SetBeaconOffset (Time interval)
+{
+  NS_LOG_FUNCTION (this << interval);
+  m_beaconOffset = interval;
 }
 
 int64_t
@@ -1443,12 +1463,12 @@ ApWifiMac::DoInitialize (void)
         {
           Time jitter = MicroSeconds (static_cast<int64_t> (m_beaconJitter->GetValue (0, 1) * (GetBeaconInterval ().GetMicroSeconds ())));
           NS_LOG_DEBUG ("Scheduling initial beacon for access point " << GetAddress () << " at time " << jitter);
-          m_beaconEvent = Simulator::Schedule (jitter, &ApWifiMac::SendOneBeacon, this);
+          m_beaconEvent = Simulator::Schedule (jitter+m_beaconOffset, &ApWifiMac::SendOneBeacon, this);
         }
       else
         {
           NS_LOG_DEBUG ("Scheduling initial beacon for access point " << GetAddress () << " at time 0");
-          m_beaconEvent = Simulator::ScheduleNow (&ApWifiMac::SendOneBeacon, this);
+          m_beaconEvent = Simulator::Schedule (m_beaconOffset, &ApWifiMac::SendOneBeacon, this);
         }
     }
   NS_ABORT_IF (!TraceConnectWithoutContext ("AckedMpdu", MakeCallback (&ApWifiMac::TxOk, this)));

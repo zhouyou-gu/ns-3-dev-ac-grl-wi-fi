@@ -143,13 +143,13 @@ WifiPhy::GetTypeId (void)
                    MakeUintegerChecker<uint8_t> ())
     .AddAttribute ("TxPowerEnd",
                    "Maximum available transmission level (dBm).",
-                   DoubleValue (16.0206),
+                   DoubleValue (10),
                    MakeDoubleAccessor (&WifiPhy::SetTxPowerEnd,
                                        &WifiPhy::GetTxPowerEnd),
                    MakeDoubleChecker<double> ())
     .AddAttribute ("TxPowerStart",
                    "Minimum available transmission level (dBm).",
-                   DoubleValue (16.0206),
+                   DoubleValue (10),
                    MakeDoubleAccessor (&WifiPhy::SetTxPowerStart,
                                        &WifiPhy::GetTxPowerStart),
                    MakeDoubleChecker<double> ())

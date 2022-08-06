@@ -50,7 +50,7 @@ StaWifiMac::GetTypeId (void)
                    MakeTimeAccessor (&StaWifiMac::m_probeRequestTimeout),
                    MakeTimeChecker ())
     .AddAttribute ("WaitBeaconTimeout", "The duration to dwell on a channel while passively scanning for beacon",
-                   TimeValue (MilliSeconds (120)),
+                   TimeValue (MilliSeconds (1000)),
                    MakeTimeAccessor (&StaWifiMac::m_waitBeaconTimeout),
                    MakeTimeChecker ())
     .AddAttribute ("AssocRequestTimeout", "The interval between two consecutive association request attempts.",

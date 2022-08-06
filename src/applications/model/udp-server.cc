@@ -159,6 +159,7 @@ UdpServer::StopApplication ()
   m_aoi_area += (double) (r.GetMicroSeconds() * r.GetMicroSeconds()) / 2;
   m_mean_aoi = m_aoi_area / (double) (m_stopTime.GetMicroSeconds() - m_startTime.GetMicroSeconds());
   m_delay_avg = m_delay_sum / (double) m_received;
+  m_interval_avg = m_interval_sum / (double) m_received;
   if (m_socket != 0)
     {
       m_socket->SetRecvCallback (MakeNullCallback<void, Ptr<Socket> > ());
@@ -213,7 +214,7 @@ UdpServer::HandleRead (Ptr<Socket> socket)
           m_aoi_area += aoi_a_delta;
           m_last_received_packet_sending_time = seqTs.GetTs ();
           m_delay_sum += p_delay.GetMicroSeconds();
-
+          m_interval_sum += interval.GetMicroSeconds();
           NS_LOG_INFO ("AoI UDP: Port " << m_port);
           NS_LOG_INFO ("AoI UDP: Packet sending interval (us) " << interval.GetMicroSeconds());
           NS_LOG_INFO ("AoI UDP: Packet delay (us) " << p_delay.GetMicroSeconds());
@@ -244,6 +245,18 @@ UdpServer::GetAvgDelay_us()
     NS_LOG_UNCOND("Delay should be calculated after the app is stopped");
   }
   return m_delay_avg;
+}
+
+
+double
+UdpServer::GetAvgInterval_us()
+{
+  NS_LOG_FUNCTION (this);
+  if (! m_is_stopped)
+  {
+    NS_LOG_UNCOND("Interval should be calculated after the app is stopped");
+  }
+  return m_interval_avg;
 }
 
 } // Namespace ns3

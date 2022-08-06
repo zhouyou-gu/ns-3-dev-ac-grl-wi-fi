@@ -137,7 +137,8 @@ public:
    * \return the maximum among the values of the Queue Size subfields
    */
   uint8_t GetMaxBufferStatus (Mac48Address address) const;
-
+  Time GetBeaconOffset (void) const;
+  void SetBeaconOffset (Time interval);
 private:
   void Receive (Ptr<WifiMacQueueItem> mpdu)  override;
   /**
@@ -304,6 +305,7 @@ private:
   Ptr<Txop> m_beaconTxop;                    //!< Dedicated Txop for beacons
   bool m_enableBeaconGeneration;             //!< Flag whether beacons are being generated
   Time m_beaconInterval;                     //!< Beacon interval
+  Time m_beaconOffset;                       //!< The time offset to start the first beacon
   EventId m_beaconEvent;                     //!< Event to generate one beacon
   Ptr<UniformRandomVariable> m_beaconJitter; //!< UniformRandomVariable used to randomize the time of the first beacon
   bool m_enableBeaconJitter;                 //!< Flag whether the first beacon should be generated at random time

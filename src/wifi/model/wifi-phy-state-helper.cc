@@ -519,6 +519,7 @@ void
 WifiPhyStateHelper::SwitchMaybeToCcaBusy (Time duration)
 {
   NS_LOG_FUNCTION (this << duration);
+  NS_LOG_WARN ("SwitchMaybeToCcaBusy:" << duration.GetMicroSeconds());
   if (GetState () != WifiPhyState::RX)
     {
       NotifyMaybeCcaBusyStart (duration);

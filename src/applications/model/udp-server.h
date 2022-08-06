@@ -83,6 +83,7 @@ public:
 
   double GetLastAoI_us ();
   double GetAvgDelay_us ();
+  double GetAvgInterval_us ();
 
 protected:
   virtual void DoDispose (void);
@@ -112,6 +113,8 @@ private:
   double m_mean_aoi = 0;
   double m_delay_sum = 0;
   double m_delay_avg = 0;
+  double m_interval_sum = 0;
+  double m_interval_avg = 0;
 
   bool m_is_stopped = false;
 
