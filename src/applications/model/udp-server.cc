@@ -259,4 +259,15 @@ UdpServer::GetAvgInterval_us()
   return m_interval_avg;
 }
 
+double
+UdpServer::GetAvgThroughput_pkt ()
+{
+  NS_LOG_FUNCTION (this);
+  if (! m_is_stopped)
+  {
+    NS_LOG_UNCOND("Interval should be calculated after the app is stopped");
+  }
+  return 1./m_interval_avg;
+}
+
 } // Namespace ns3

@@ -84,6 +84,7 @@ public:
   double GetLastAoI_us ();
   double GetAvgDelay_us ();
   double GetAvgInterval_us ();
+  double GetAvgThroughput_pkt ();
 
 protected:
   virtual void DoDispose (void);

@@ -64,8 +64,10 @@ MyGymEnv::GetObservationSpace()
   std::vector<uint32_t> shape_aoi = {(uint32_t)m_n_sta,};
   std::string dtype = TypeNameGet<float> ();
   Ptr<OpenGymBoxSpace> aoi = CreateObject<OpenGymBoxSpace> (0., 1000000000., shape_aoi, dtype);
+  Ptr<OpenGymBoxSpace> thr = CreateObject<OpenGymBoxSpace> (0., 1000000000., shape_aoi, dtype);
   Ptr<OpenGymDictSpace> space = CreateObject<OpenGymDictSpace> ();
   space->Add("aoi", aoi);
+  space->Add("thr", thr);
 
 //  NS_LOG_UNCOND ("MyGetObservationSpace: " << space);
   return space;
@@ -115,19 +117,24 @@ MyGymEnv::GetObservation()
 
   std::vector<uint32_t> shape_pm = {(uint32_t)m_n_sta,};
   Ptr<OpenGymBoxContainer<float> > pm = CreateObject<OpenGymBoxContainer<float> >(shape_pm);
+  Ptr<OpenGymBoxContainer<float> > pm_2 = CreateObject<OpenGymBoxContainer<float> >(shape_pm);
   if (is_simulation_end){
     for (uint32_t j = 0; j < m_n_sta; j++){
       float aoi = DynamicCast<UdpServer>(m_serverApps.Get(j))->GetLastAoI_us();
       pm->AddValue(aoi);
+      float thr = DynamicCast<UdpServer>(m_serverApps.Get(j))->GetAvgThroughput_pkt();
+      pm_2->AddValue (thr);
     }
   } else {
     for (uint32_t j = 0; j < m_n_sta; j++){
       pm->AddValue(0.);
+      pm_2->AddValue (0);
     }
   }
 
   Ptr<OpenGymDictContainer> data = CreateObject<OpenGymDictContainer> ();
   data->Add("aoi",pm);
+  data->Add("thr",pm_2);
 
   // Print data from tuple
 //  Ptr<OpenGymBoxContainer<float> > aoi = DynamicCast<OpenGymBoxContainer<float> >(data->Get("aoi"));

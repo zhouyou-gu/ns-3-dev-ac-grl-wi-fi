@@ -71,12 +71,14 @@ MyGymEnv::GetObservationSpace()
   Ptr<OpenGymBoxSpace> loss_sta_ap = CreateObject<OpenGymBoxSpace> (low, high, shape_path_loss_sta_ap, dtype);
   Ptr<OpenGymBoxSpace> loss_sta_sta = CreateObject<OpenGymBoxSpace> (low, high, shape_path_loss_sta_sta, dtype);
   Ptr<OpenGymBoxSpace> aoi = CreateObject<OpenGymBoxSpace> (0., 1000000000., shape_aoi, dtype);
+  Ptr<OpenGymBoxSpace> thr = CreateObject<OpenGymBoxSpace> (0., 1000000000., shape_aoi, dtype);
   Ptr<OpenGymDictSpace> space = CreateObject<OpenGymDictSpace> ();
 
   space->Add("loss_ap_ap", loss_ap_ap);
   space->Add("loss_sta_ap", loss_sta_ap);
   space->Add("loss_sta_sta", loss_sta_sta);
   space->Add("aoi", aoi);
+  space->Add("thr", thr);
 
 //  NS_LOG_UNCOND ("MyGetObservationSpace: " << space);
   return space;
@@ -163,7 +165,14 @@ MyGymEnv::GetObservation()
     pm->AddValue(aoi);
   }
 
+  Ptr<OpenGymBoxContainer<float> > pm_2 = CreateObject<OpenGymBoxContainer<float> >(shape_pm);
+  for (uint32_t j = 0; j < m_n_sta; j++){
+    float thr = DynamicCast<UdpServer>(m_serverApps.Get(j))->GetAvgThroughput_pkt();
+    pm->AddValue(thr);
+  }
+
   data->Add("aoi",pm);
+  data->Add("thr",pm);
 
   // Print data from tuple
 //  Ptr<OpenGymBoxContainer<float> > loss_ap_ap = DynamicCast<OpenGymBoxContainer<float> >(data->Get("loss_ap_ap"));
