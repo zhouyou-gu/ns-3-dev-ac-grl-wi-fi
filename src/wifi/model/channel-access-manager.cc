@@ -114,6 +114,7 @@ ChannelAccessManager::ChannelAccessManager ()
     m_lastSwitchingDuration (MicroSeconds (0)),
     m_sleeping (false),
     m_off (false),
+    m_TWTSleeping (false),
     m_phyListener (0)
 {
   NS_LOG_FUNCTION (this);
@@ -238,7 +239,7 @@ ChannelAccessManager::NeedBackoffUponAccess (Ptr<Txop> txop)
   NS_LOG_FUNCTION (this << txop);
 
   // No backoff needed if in sleep mode or off
-  if (m_sleeping || m_off)
+  if (m_sleeping || m_off || m_TWTSleeping)
     {
       return false;
     }
@@ -298,7 +299,7 @@ ChannelAccessManager::RequestAccess (Ptr<Txop> txop)
       m_phy->NotifyChannelAccessRequested ();
     }
   //Deny access if in sleep mode or off
-  if (m_sleeping || m_off)
+  if (m_sleeping || m_off || m_TWTSleeping)
     {
       return;
     }
@@ -818,5 +819,46 @@ ChannelAccessManager::NotifyCtsTimeoutResetNow (void)
   m_lastCtsTimeoutEnd = Simulator::Now ();
   DoRestartAccessTimeoutIfNeeded ();
 }
+
+
+void
+ChannelAccessManager::NotifyTWTSleep() {
+    NS_LOG_FUNCTION (this);
+//    NS_LOG_UNCOND("NotifyTWTSleep");
+
+    m_TWTSleeping = true;
+    //Cancel timeout
+    if (m_accessTimeout.IsRunning ())
+      {
+        m_accessTimeout.Cancel ();
+      }
+
+    //Reset backoffs
+    for (auto txop : m_txops)
+      {
+        txop->NotifySleep ();
+      }
+}
+
+void
+ChannelAccessManager::NotifyTWTAwake() {
+    NS_LOG_FUNCTION (this);
+//    NS_LOG_UNCOND("NotifyTWTAwake");
+
+    m_TWTSleeping = false;
+    for (auto txop : m_txops)
+      {
+        uint32_t remainingSlots = txop->GetBackoffSlots ();
+        if (remainingSlots > 0)
+          {
+            txop->UpdateBackoffSlotsNow (remainingSlots, Simulator::Now ());
+            NS_ASSERT (txop->GetBackoffSlots () == 0);
+          }
+        txop->ResetCw ();
+        txop->m_access = Txop::NOT_REQUESTED;
+        txop->NotifyWakeUp ();
+      }
+}
+
 
 } //namespace ns3

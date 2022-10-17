@@ -426,6 +426,9 @@ public:
   uint16_t GetMaxAmsduSize (AcIndex ac) const;
 
 
+void NotifyTWTSleep(void);
+void NotifyTWTAwake(void);
+
 protected:
   void DoInitialize () override;
   void DoDispose () override;
@@ -811,6 +814,8 @@ private:
    * This trace source is fed by a WifiTxTimer object.
    */
   PsduMapResponseTimeoutTracedCallback m_psduMapResponseTimeoutCallback;
+
+
 };
 
 } //namespace ns3

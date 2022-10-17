@@ -222,6 +222,8 @@ public:
    */
   bool IsBusy (void) const;
 
+    void NotifyTWTSleep();
+    void NotifyTWTAwake();
 
 protected:
   void DoDispose (void) override;
@@ -311,6 +313,7 @@ private:
   Time m_lastSwitchingDuration;          //!< the last switching duration time
   bool m_sleeping;                       //!< flag whether it is in sleeping state
   bool m_off;                            //!< flag whether it is in off state
+  bool m_TWTSleeping;                    //!< flag whether it is in TWT sleeping state
   Time m_eifsNoDifs;                     //!< EIFS no DIFS time
   EventId m_accessTimeout;               //!< the access timeout ID
   Time m_slot;                           //!< the slot time

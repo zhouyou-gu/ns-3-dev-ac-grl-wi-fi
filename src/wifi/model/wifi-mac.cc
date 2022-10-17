@@ -1425,5 +1425,16 @@ WifiMac::GetMaxAmsduSize (AcIndex ac) const
   return maxSize;
 }
 
+void
+WifiMac::NotifyTWTSleep(void) {
+    NS_LOG_FUNCTION (this);
+    m_channelAccessManager->NotifyTWTSleep();
+}
+void
+WifiMac::NotifyTWTAwake(void){
+    NS_LOG_FUNCTION (this);
+    m_channelAccessManager->NotifyTWTAwake();
+}
+
 } //namespace ns3
 

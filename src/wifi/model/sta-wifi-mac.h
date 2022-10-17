@@ -321,6 +321,10 @@ private:
 
   void DoInitialize (void) override;
 
+    void StartTWT(void);
+    void ScheduleTWT(void);
+
+
   MacState m_state;            ///< MAC state
   uint16_t m_aid;              ///< Association AID
   Time m_waitBeaconTimeout;    ///< wait beacon timeout
@@ -338,6 +342,12 @@ private:
   // this sorted list, but we are using a std::vector because we want to sort
   // based on SNR but find duplicates based on BSSID, and in practice this
   // candidate vector should not be too large.
+
+    Time m_twtstarttime;    ///< m_twtstarttime
+    Time m_twtoffset;    ///< m_twtoffset
+    Time m_twtduration;  ///< m_twtduration
+    Time m_twtperiodicity;  ///< m_twtperiodicity
+
 
   TracedCallback<Mac48Address> m_assocLogger;   ///< association logger
   TracedCallback<Mac48Address> m_deAssocLogger; ///< disassociation logger

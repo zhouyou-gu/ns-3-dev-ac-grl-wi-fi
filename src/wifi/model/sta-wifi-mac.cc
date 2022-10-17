@@ -72,6 +72,26 @@ StaWifiMac::GetTypeId (void)
                    BooleanValue (false),
                    MakeBooleanAccessor (&StaWifiMac::SetActiveProbing, &StaWifiMac::GetActiveProbing),
                    MakeBooleanChecker ())
+    .AddAttribute ("twtstarttime",
+                  "twtstarttime",
+                 TimeValue (MilliSeconds (0)),
+                 MakeTimeAccessor (&StaWifiMac::m_twtstarttime),
+                                    MakeTimeChecker ())
+    .AddAttribute ("twtoffset",
+                  "twtoffset",
+                 TimeValue (MilliSeconds (0)),
+                 MakeTimeAccessor (&StaWifiMac::m_twtoffset),
+                                    MakeTimeChecker ())
+    .AddAttribute ("twtduration",
+                  "twtduration",
+                 TimeValue (MilliSeconds (0)),
+                 MakeTimeAccessor (&StaWifiMac::m_twtduration),
+                                    MakeTimeChecker ())
+    .AddAttribute ("twtperiodicity",
+                    "twtperiodicity",
+                   TimeValue (MilliSeconds (0)),
+                   MakeTimeAccessor (&StaWifiMac::m_twtperiodicity),
+                                      MakeTimeChecker ())
     .AddTraceSource ("Assoc", "Associated with an access point.",
                      MakeTraceSourceAccessor (&StaWifiMac::m_assocLogger),
                      "ns3::Mac48Address::TracedCallback")
@@ -106,6 +126,8 @@ StaWifiMac::DoInitialize (void)
 {
   NS_LOG_FUNCTION (this);
   StartScanning ();
+  StartTWT ();
+
 }
 
 StaWifiMac::~StaWifiMac ()
@@ -1189,6 +1211,24 @@ StaWifiMac::NotifyChannelSwitching (void)
     {
       Disassociated ();
     }
+}
+
+
+void
+StaWifiMac::StartTWT(void) {
+    NS_LOG_FUNCTION (this);
+    if(m_twtduration.IsStrictlyPositive()){
+        NS_LOG_UNCOND("start twt");
+        Simulator::Schedule(m_twtstarttime,&StaWifiMac::ScheduleTWT,this);
+    }
+}
+
+void
+StaWifiMac::ScheduleTWT(void) {
+    NS_LOG_FUNCTION (this);
+    Simulator::Schedule(m_twtoffset,&WifiMac::NotifyTWTAwake,this);
+    Simulator::Schedule(m_twtoffset+m_twtduration,&WifiMac::NotifyTWTSleep,this);
+    Simulator::Schedule(m_twtperiodicity,&StaWifiMac::ScheduleTWT,this);
 }
 
 } //namespace ns3
