@@ -51,7 +51,7 @@ WifiRemoteStationManager::GetTypeId (void)
     .AddAttribute ("MaxSsrc",
                    "The maximum number of retransmission attempts for any packet with size <= RtsCtsThreshold. "
                    "This value will not have any effect on some rate control algorithms.",
-                   UintegerValue (7),
+                   UintegerValue (5),
                    MakeUintegerAccessor (&WifiRemoteStationManager::SetMaxSsrc),
                    MakeUintegerChecker<uint32_t> ())
     .AddAttribute ("MaxSlrc",

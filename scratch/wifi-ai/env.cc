@@ -23,6 +23,8 @@
 #include "ns3/boolean.h"
 #include "ns3/ipv4-global-routing-helper.h"
 
+#include "mygym.h"
+
 #define UDP_IP_WIFI_HEADER_SIZE 64
 
 using namespace ns3;
@@ -46,48 +48,12 @@ void cb_deasso(uint16_t /* AID */ a, Mac48Address b){
   std::cout<< "DeAssociatedSta:" << a << ":" << b <<std::endl;
 }
 
-void cb_tx_start(Ptr<const Packet> packet, double power){
-    WifiMacHeader head;
-    packet->PeekHeader (head);
-    Mac48Address src = head.GetAddr2 ();
-    if (head.GetType () == WIFI_MAC_DATA)
-      {
-          NS_LOG_UNCOND("cb_tx_start");
-          std::cout<< "tx_start:" << (Simulator::Now()- Seconds(10)).GetMilliSeconds() << ":" << src <<std::endl;
-      }
-}
-void cb_tx_ended(Ptr<const Packet> packet){
-    WifiMacHeader head;
-    packet->PeekHeader (head);
-    Mac48Address src = head.GetAddr2 ();
-    if (head.GetType () == WIFI_MAC_DATA)
-      {
-          NS_LOG_UNCOND("cb_tx_ended");
-          std::cout<< "tx_ended:" << (Simulator::Now()- Seconds(10)).GetMilliSeconds() << ":" << src <<std::endl;
-      }
-}
-
 int main (int argc, char *argv[])
 {
   LogComponentEnableAll (LOG_PREFIX_TIME);
   LogComponentEnableAll (LOG_PREFIX_NODE);
-//
   LogComponentEnable ("wifi-test", LOG_LEVEL_INFO);
-//
-//  LogComponentEnable ("UdpServer", ns3::LOG_LEVEL_ALL);
-//  LogComponentEnable ("UdpClient", ns3::LOG_LEVEL_ALL);
-//  LogComponentEnable ("UdpSocketImpl", ns3::LOG_LEVEL_ALL);
-//  LogComponentEnable ("Ipv4Interface", ns3::LOG_LEVEL_ALL);
-//  LogComponentEnable ("Ipv4L3Protocol", ns3::LOG_LEVEL_ALL);
-//  LogComponentEnable ("Ipv4", ns3::LOG_LEVEL_ALL);
-//  LogComponentEnable ("NetDevice", ns3::LOG_LEVEL_ALL);
-//  LogComponentEnable ("ArpL3Protocol", ns3::LOG_LEVEL_ALL);
-//  LogComponentEnable ("ArpCache", ns3::LOG_LEVEL_ALL);
-//  LogComponentEnable ("PointToPointChannel", ns3::LOG_LEVEL_ALL);
-//  LogComponentEnable ("PointToPointNetDevice", ns3::LOG_LEVEL_ALL);
-//  LogComponentEnable ("YansWifiChannel", ns3::LOG_LEVEL_WARN);
-//  LogComponentEnable ("InterferenceHelper", ns3::LOG_LEVEL_WARN);
-//  LogComponentEnable ("WifiPhyStateHelper", ns3::LOG_LEVEL_WARN);
+
 
   std::string phyMode ("S1gOfdmRate0_30MbpsBW1MHz");
   uint32_t packetSize = 20; // bytes
@@ -98,8 +64,8 @@ int main (int argc, char *argv[])
   int n_sta = 10;
 
   uint32_t simSeed = 1000;
-  uint32_t openGymPort = 5000;
-  int simTime = 10;
+  uint32_t openGymPort = 6000;
+  int simTime = 200;
 
   int time_for_arp_start = 1;
   int time_for_arp_end = 5;
@@ -150,28 +116,14 @@ int main (int argc, char *argv[])
   stack.Install (sta_nodes);
   Ipv4AddressGenerator::TestMode();
 
-  MobilityHelper mobility_ap;
-  Ptr<ListPositionAllocator> positionAlloc_ap = CreateObject<ListPositionAllocator> ();
-  positionAlloc_ap->Add (Vector(500,500,0.0));
-  positionAlloc_ap->Add (Vector(-500,500,0.0));
-  positionAlloc_ap->Add (Vector(500,-500,0.0));
-  positionAlloc_ap->Add (Vector(-500,-500,0.0));
-  mobility_ap.SetPositionAllocator (positionAlloc_ap);
-  mobility_ap.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
-  mobility_ap.Install (ap_nodes);
-
-
-  MobilityHelper mobility_sta;
-  Ptr<RandomRectanglePositionAllocator> positionAlloc_sta = CreateObject<RandomRectanglePositionAllocator> ();
-  Ptr<UniformRandomVariable> rnd = CreateObject<UniformRandomVariable> ();
-  rnd->SetAttribute("Min", DoubleValue(-1000));
-  rnd->SetAttribute("Max", DoubleValue(1000));
-  positionAlloc_sta->SetX(rnd);
-  positionAlloc_sta->SetY(rnd);
-  mobility_sta.SetPositionAllocator (positionAlloc_sta);
-  mobility_sta.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
-  mobility_sta.Install (sta_nodes);
-
+  for (uint32_t i = 0; i < n_ap; i++)
+    {
+      ap_nodes.Get (i)->AggregateObject (CreateObject<ConstantPositionMobilityModel> ());
+    }
+  for (uint32_t i = 0; i < n_sta; i++)
+    {
+      sta_nodes.Get (i)->AggregateObject (CreateObject<ConstantPositionMobilityModel> ());
+    }
 
   // The below set of helpers will help us to put together the wifi NICs we want
   WifiHelper wifi;
@@ -183,8 +135,14 @@ int main (int argc, char *argv[])
   wifiPhy.SetPcapDataLinkType (WifiPhyHelper::DLT_IEEE802_11_RADIO);
 
 
-  Ptr<FriisPropagationLossModel> lossModel = CreateObject<FriisPropagationLossModel> ();
-  lossModel->SetFrequency(1e9);
+  Ptr<MatrixPropagationLossModel> lossModel = CreateObject<MatrixPropagationLossModel> ();
+  lossModel->SetDefaultLoss (200); // set default loss to 200 dB (no link)
+  Ptr<OpenGymInterface> openGymInterface = CreateObject<OpenGymInterface> (openGymPort);
+  Ptr<MyGymEnv> myGymEnv = CreateObject<MyGymEnv> (n_ap,n_sta, lossModel);
+  myGymEnv->m_staNodes.Add(sta_nodes);
+  myGymEnv->m_apNodes.Add(ap_nodes);
+  myGymEnv->SetOpenGymInterface(openGymInterface);
+  myGymEnv->Notify();
 
   Ptr<YansWifiChannel> yanswc = CreateObject <YansWifiChannel> ();
   yanswc->SetPropagationLossModel (lossModel);
@@ -229,24 +187,15 @@ int main (int argc, char *argv[])
                    "QosSupported", BooleanValue (false)
   );
   NetDeviceContainer staDevice = wifi.Install (wifiPhy, wifiMac, sta_nodes);
-  for (uint32_t i = 0; i < n_sta; i++)
-  {
-    auto m = staDevice.Get(i);
-    auto w = m->GetObject<WifiNetDevice>();
-    auto v = DynamicCast<StaWifiMac>(w->GetMac());
-    v->SetAttribute("twtstarttime", TimeValue(MicroSeconds(10000000)));
-    v->SetAttribute("twtoffset", TimeValue(MicroSeconds(0.)));
-    v->SetAttribute("twtduration", TimeValue(MicroSeconds(500000)));
-    v->SetAttribute("twtperiodicity", TimeValue(MicroSeconds(1000000)));
-  }
-
-  for (uint32_t i = 0; i < n_sta; i++)
+    for (uint32_t i = 0; i < n_sta; i++)
     {
       auto m = staDevice.Get(i);
       auto w = m->GetObject<WifiNetDevice>();
-      auto v = DynamicCast<WifiPhy>(w->GetPhy());
-      v->TraceConnectWithoutContext("PhyTxBegin",MakeCallback(&cb_tx_start));
-      v->TraceConnectWithoutContext("PhyTxEnd",MakeCallback(&cb_tx_ended));
+      auto v = DynamicCast<StaWifiMac>(w->GetMac());
+      v->SetAttribute("twtstarttime", TimeValue(MicroSeconds(10000000)));
+      v->SetAttribute("twtoffset", TimeValue(MicroSeconds(0.)));
+      v->SetAttribute("twtduration", TimeValue(MicroSeconds(500000)));
+      v->SetAttribute("twtperiodicity", TimeValue(MicroSeconds(1000000)));
     }
 
 
@@ -368,7 +317,7 @@ int main (int argc, char *argv[])
     std::cout<< "STA: " << i << ", addr: " << v->GetAddress() << std::endl;
     std::cout<< "STA: " << i << ", queue size: " << (v->GetTxop())->GetWifiMacQueue()->GetMaxSize() << std::endl;
     std::cout<< "STA: " << i << ", queue drop: " << (v->GetTxop())->GetWifiMacQueue()->GetTotalDroppedPackets() << std::endl;
-    std::cout<< "STA: " << i << ", queue srxp: " << (v->GetTxop())->GetWifiMacQueue()->GetTotalReceivedPackets() << std::endl;
+    std::cout<< "STA: " << i << ", queue totp: " << (v->GetTxop())->GetWifiMacQueue()->GetTotalReceivedPackets() << std::endl;
     auto r = ServerApps.Get(i);
     std::cout<< "STA: " << i << ", X-Y: " << sta_nodes.Get(i)->GetObject<MobilityModel>()->GetPosition().x << "\t," << sta_nodes.Get(i)->GetObject<MobilityModel>()->GetPosition().y << std::endl;
     std::cout<< "   packets received " << DynamicCast<UdpServer>(r)->GetReceived() << std::endl;
@@ -381,17 +330,17 @@ int main (int argc, char *argv[])
     auto m = apDevice.Get(i);
     auto w = m->GetObject<WifiNetDevice>();
     auto v = w->GetMac();
-    std::cout<< "AP: " << i << ", bssid: " << v->GetBssid() << std::endl;
-    std::cout<< "AP: " << i << ", queue size: " << (v->GetTxop())->GetWifiMacQueue()->GetMaxSize() << std::endl;
-    std::cout<< "AP: " << i << ", queue drop: " << (v->GetTxop())->GetWifiMacQueue()->GetTotalDroppedPackets() << std::endl;
-    std::cout<< "AP: " << i << ", queue totp: " << (v->GetTxop())->GetWifiMacQueue()->GetTotalReceivedPackets() << std::endl;
-//    auto r = ServerApps.Get(i);
-//    std::cout<< "AP: " << i << ", X-Y: " << sta_nodes.Get(i)->GetObject<MobilityModel>()->GetPosition().x << "\t," << sta_nodes.Get(i)->GetObject<MobilityModel>()->GetPosition().y << std::endl;
-//    std::cout<< "   packets received " << DynamicCast<UdpServer>(r)->GetReceived() << std::endl;
-//    std::cout<< "   bits received " << DynamicCast<UdpServer>(r)->GetReceived() * (packetSize + UDP_IP_WIFI_HEADER_SIZE) * 8 << std::endl;
-//    std::cout<< "   aoi received " << DynamicCast<UdpServer>(r)->GetLastAoI_us() << std::endl;
-//    std::cout<< "   delay received " << DynamicCast<UdpServer>(r)->GetAvgDelay_us() << std::endl;
-//    std::cout<< "   interval received " << DynamicCast<UdpServer>(r)->GetAvgInterval_us() << std::endl;
+    std::cout<< "STA: " << i << ", bssid: " << v->GetBssid() << std::endl;
+    std::cout<< "STA: " << i << ", queue size: " << (v->GetTxop())->GetWifiMacQueue()->GetMaxSize() << std::endl;
+    std::cout<< "STA: " << i << ", queue drop: " << (v->GetTxop())->GetWifiMacQueue()->GetTotalDroppedPackets() << std::endl;
+    std::cout<< "STA: " << i << ", queue totp: " << (v->GetTxop())->GetWifiMacQueue()->GetTotalReceivedPackets() << std::endl;
+    auto r = ServerApps.Get(i);
+    std::cout<< "STA: " << i << ", X-Y: " << sta_nodes.Get(i)->GetObject<MobilityModel>()->GetPosition().x << "\t," << sta_nodes.Get(i)->GetObject<MobilityModel>()->GetPosition().y << std::endl;
+    std::cout<< "   packets received " << DynamicCast<UdpServer>(r)->GetReceived() << std::endl;
+    std::cout<< "   bits received " << DynamicCast<UdpServer>(r)->GetReceived() * (packetSize + UDP_IP_WIFI_HEADER_SIZE) * 8 << std::endl;
+    std::cout<< "   aoi received " << DynamicCast<UdpServer>(r)->GetLastAoI_us() << std::endl;
+    std::cout<< "   delay received " << DynamicCast<UdpServer>(r)->GetAvgDelay_us() << std::endl;
+    std::cout<< "   interval received " << DynamicCast<UdpServer>(r)->GetAvgInterval_us() << std::endl;
   }
 
   std::cout<< "server ip: " << server_to_gate_intf.GetAddress(0) << std::endl;
@@ -430,6 +379,11 @@ int main (int argc, char *argv[])
             }
         }
     }
+
+  myGymEnv->m_serverApps.Add(ServerApps);
+  myGymEnv->is_simulation_end = true;
+  myGymEnv->Notify();
+  myGymEnv->NotifySimulationEnd();
   Simulator::Destroy ();
 
   return 0;
