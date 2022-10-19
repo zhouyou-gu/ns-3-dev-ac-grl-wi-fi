@@ -22,6 +22,8 @@
 #include "ns3/udp-server.h"
 #include "ns3/boolean.h"
 #include "ns3/ipv4-global-routing-helper.h"
+#include "ns3/s1g-ofdm-phy.h"
+#include "ns3/ppv-error-rate-model.h"
 
 #define UDP_IP_WIFI_HEADER_SIZE 64
 
@@ -246,11 +248,56 @@ int main (int argc, char *argv[])
       auto m = staDevice.Get(i);
       auto w = m->GetObject<WifiNetDevice>();
       auto v = DynamicCast<WifiPhy>(w->GetPhy());
-      v->TraceConnectWithoutContext("PhyTxBegin",MakeCallback(&cb_tx_start));
-      v->TraceConnectWithoutContext("PhyTxEnd",MakeCallback(&cb_tx_ended));
+//      v->TraceConnectWithoutContext("PhyTxBegin",MakeCallback(&cb_tx_start));
+//      v->TraceConnectWithoutContext("PhyTxEnd",MakeCallback(&cb_tx_ended));
     }
 
 
+  for (uint32_t j = 0; j < n_sta; j++) {
+      double max_gain = -std::numeric_limits<double>::infinity();
+      uint32_t max_i = 0;
+      for (uint32_t i = 0; i < n_ap; i++) {
+          double gain = lossModel->CalcRxPower(0, ap_nodes.Get(i)->GetObject<MobilityModel>(),
+                                               sta_nodes.Get(j)->GetObject<MobilityModel>());
+          if (gain >= max_gain) {
+              max_gain = gain;
+              max_i = i;
+          }
+      }
+      WifiTxVector txVector;
+      Ptr<PpvErrorRateModel> ppv = CreateObject<PpvErrorRateModel>();
+      auto table = S1gOfdmPhy::GetModulationLookupTable();
+      auto bandtable = S1gOfdmPhy::GetModulationBandLookupTable();
+      auto m = staDevice.Get(j);
+      auto w = m->GetObject<WifiNetDevice>();
+      auto v = DynamicCast<WifiPhy>(w->GetPhy());
+      uint16_t bw = v->GetChannelWidth();
+      double pw = v->GetTxPowerStart();
+      double nf = DbToRatio(30.);
+      std::string max_mode ("S1gOfdmRate0_30MbpsBW1MHz");
+      uint64_t max_rate = 0;
+      double BOLTZMANN = 1.3803e-23;
+      double Nt = BOLTZMANN * 290 * bw * 1e6;
+      double noiseFloor = nf * Nt;
+
+      for (auto it = bandtable.begin(); it != bandtable.end(); it++) {
+          if (it->second == bw) {
+              txVector.SetMode(it->first);
+              txVector.SetChannelWidth(bw);
+              double ps = ppv->GetChunkSuccessRate(WifiMode(it->first), txVector,
+                                                   std::pow(10.0, (pw + max_gain - RatioToDb(noiseFloor)) / 10.0),
+                                                   (packetSize + UDP_IP_WIFI_HEADER_SIZE) * 8);
+              uint64_t rate = S1gOfdmPhy::GetDataRate(it->first, bw);
+              if (rate >= max_rate and ps > (1.-1e-5)) {
+                  max_rate = rate;
+                  max_mode = it->first;
+              }
+          }
+      }
+      auto a = DynamicCast<StaWifiMac>(w->GetMac());
+      a->GetWifiRemoteStationManager()->SetAttribute("DataMode", StringValue (max_mode));
+      std::cout << "STA:" << j << "-" << "AP:" << max_i << ", Gain: " << max_gain << "\n\t\t noiseFloor:" << RatioToDb(noiseFloor) << " phyMode:" << max_mode << std::endl;
+  }
 
   PointToPointHelper p2p;
   p2p.SetDeviceAttribute ("DataRate", StringValue ("100Gbps"));
