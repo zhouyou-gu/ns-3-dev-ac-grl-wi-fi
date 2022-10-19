@@ -181,7 +181,8 @@ int main (int argc, char *argv[])
 
   YansWifiPhyHelper wifiPhy;
   wifiPhy.Set ("ChannelSettings", StringValue ("{0, 1, BAND_S1GHZ, 0}"));
-  wifiPhy.Set ("RxGain", DoubleValue (0) );
+  wifiPhy.Set ("RxSensitivity", DoubleValue (-95.) );
+  wifiPhy.Set ("CcaEdThreshold", DoubleValue (-75.) );
   wifiPhy.SetPcapDataLinkType (WifiPhyHelper::DLT_IEEE802_11_RADIO);
   wifiPhy.SetErrorRateModel("ns3::PpvErrorRateModel");
 
@@ -273,7 +274,7 @@ int main (int argc, char *argv[])
       auto v = DynamicCast<WifiPhy>(w->GetPhy());
       uint16_t bw = v->GetChannelWidth();
       double pw = v->GetTxPowerStart();
-      double nf = DbToRatio(30.);
+      double nf = DbToRatio(20.);
       std::string max_mode ("S1gOfdmRate0_30MbpsBW1MHz");
       uint64_t max_rate = 0;
       double BOLTZMANN = 1.3803e-23;

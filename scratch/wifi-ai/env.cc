@@ -134,6 +134,8 @@ int main (int argc, char *argv[])
   YansWifiPhyHelper wifiPhy;
   wifiPhy.Set ("ChannelSettings", StringValue ("{0, 1, BAND_S1GHZ, 0}"));
   wifiPhy.Set ("RxGain", DoubleValue (0) );
+  wifiPhy.Set ("RxSensitivity", DoubleValue (-95.) );
+  wifiPhy.Set ("CcaEdThreshold", DoubleValue (-75.) );
   wifiPhy.SetPcapDataLinkType (WifiPhyHelper::DLT_IEEE802_11_RADIO);
   wifiPhy.SetErrorRateModel("ns3::PpvErrorRateModel");
 
@@ -156,8 +158,6 @@ int main (int argc, char *argv[])
   WifiMacHelper wifiMac;
   wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager",
                                 "DataMode", StringValue (phyMode),
-//                                "MaxSsrc", UintegerValue(2),
-//                                "MaxSlrc", UintegerValue(2),
                                 "ControlMode", StringValue (phyMode));
 
   // Setup the rest of the MAC
