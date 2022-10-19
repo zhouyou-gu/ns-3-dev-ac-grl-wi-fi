@@ -65,9 +65,11 @@ MyGymEnv::GetObservationSpace()
   std::string dtype = TypeNameGet<float> ();
   Ptr<OpenGymBoxSpace> aoi = CreateObject<OpenGymBoxSpace> (0., 1000000000., shape_aoi, dtype);
   Ptr<OpenGymBoxSpace> thr = CreateObject<OpenGymBoxSpace> (0., 1000000000., shape_aoi, dtype);
+  Ptr<OpenGymBoxSpace> del = CreateObject<OpenGymBoxSpace> (0., 1000000000., shape_aoi, dtype);
   Ptr<OpenGymDictSpace> space = CreateObject<OpenGymDictSpace> ();
   space->Add("aoi", aoi);
   space->Add("thr", thr);
+  space->Add("del", thr);
 
 //  NS_LOG_UNCOND ("MyGetObservationSpace: " << space);
   return space;
@@ -79,12 +81,14 @@ Define action space
 Ptr<OpenGymSpace>
 MyGymEnv::GetActionSpace()
 {
+
+  std::string dtype = TypeNameGet<float> ();
+
   float low = -1000.0;
   float high = 0.0;
   std::vector<uint32_t> shape_loss_ap_ap= {(uint32_t)m_n_ap * (uint32_t)m_n_ap,};
   std::vector<uint32_t> shape_loss_sta_ap= {(uint32_t)m_n_ap * (uint32_t)m_n_sta,};
   std::vector<uint32_t> shape_loss_sta_sta= {(uint32_t)m_n_sta * (uint32_t)m_n_sta,};
-  std::string dtype = TypeNameGet<float> ();
   Ptr<OpenGymBoxSpace> loss_ap_ap = CreateObject<OpenGymBoxSpace> (low, high, shape_loss_ap_ap, dtype);
   Ptr<OpenGymBoxSpace> loss_sta_ap = CreateObject<OpenGymBoxSpace> (low, high, shape_loss_sta_ap, dtype);
   Ptr<OpenGymBoxSpace> loss_sta_sta = CreateObject<OpenGymBoxSpace> (low, high, shape_loss_sta_sta, dtype);
@@ -94,7 +98,20 @@ MyGymEnv::GetActionSpace()
   space->Add("loss_sta_ap", loss_sta_ap);
   space->Add("loss_sta_sta", loss_sta_sta);
 
-//  NS_LOG_UNCOND ("MyGetObservationSpace: " << space);
+
+  float time_low = 0;
+  float time_high = 1e10;
+  std::vector<uint32_t> shape_twt_config= {(uint32_t)m_n_sta,};
+  Ptr<OpenGymBoxSpace> twtstarttime = CreateObject<OpenGymBoxSpace> (time_low, time_high, shape_twt_config, dtype);
+  Ptr<OpenGymBoxSpace> twtoffset = CreateObject<OpenGymBoxSpace> (time_low, time_high, shape_twt_config, dtype);
+  Ptr<OpenGymBoxSpace> twtduration = CreateObject<OpenGymBoxSpace> (time_low, time_high, shape_twt_config, dtype);
+  Ptr<OpenGymBoxSpace> twtperiodicity = CreateObject<OpenGymBoxSpace> (time_low, time_high, shape_twt_config, dtype);
+
+  space->Add("twtstarttime", twtstarttime);
+  space->Add("twtoffset", twtoffset);
+  space->Add("twtduration", twtduration);
+  space->Add("twtperiodicity", twtperiodicity);
+
   return space;
 }
 
@@ -116,25 +133,31 @@ MyGymEnv::GetObservation()
 {
 
   std::vector<uint32_t> shape_pm = {(uint32_t)m_n_sta,};
-  Ptr<OpenGymBoxContainer<float> > pm = CreateObject<OpenGymBoxContainer<float> >(shape_pm);
+  Ptr<OpenGymBoxContainer<float> > pm_1 = CreateObject<OpenGymBoxContainer<float> >(shape_pm);
   Ptr<OpenGymBoxContainer<float> > pm_2 = CreateObject<OpenGymBoxContainer<float> >(shape_pm);
+  Ptr<OpenGymBoxContainer<float> > pm_3 = CreateObject<OpenGymBoxContainer<float> >(shape_pm);
+//  Ptr<OpenGymBoxContainer<float> > pm_4 = CreateObject<OpenGymBoxContainer<float> >(shape_pm);
   if (is_simulation_end){
     for (uint32_t j = 0; j < m_n_sta; j++){
       float aoi = DynamicCast<UdpServer>(m_serverApps.Get(j))->GetLastAoI_us();
-      pm->AddValue(aoi);
+      pm_1->AddValue(aoi);
       float thr = DynamicCast<UdpServer>(m_serverApps.Get(j))->GetAvgThroughput_pkt();
       pm_2->AddValue (thr);
+      float del = DynamicCast<UdpServer>(m_serverApps.Get(j))->GetAvgDelay_us();
+      pm_3->AddValue (del);
     }
   } else {
     for (uint32_t j = 0; j < m_n_sta; j++){
-      pm->AddValue(0.);
-      pm_2->AddValue (0);
+        pm_1->AddValue (0);
+        pm_2->AddValue (0);
+        pm_3->AddValue (0);
     }
   }
 
   Ptr<OpenGymDictContainer> data = CreateObject<OpenGymDictContainer> ();
-  data->Add("aoi",pm);
+  data->Add("aoi",pm_1);
   data->Add("thr",pm_2);
+  data->Add("del",pm_3);
 
   // Print data from tuple
 //  Ptr<OpenGymBoxContainer<float> > aoi = DynamicCast<OpenGymBoxContainer<float> >(data->Get("aoi"));
@@ -171,8 +194,9 @@ Execute received actions
 bool
 MyGymEnv::ExecuteActions(Ptr<OpenGymDataContainer> action)
 {
-  Ptr<MatrixPropagationLossModel> lm = DynamicCast<MatrixPropagationLossModel>(m_loss_model);
   Ptr<OpenGymDictContainer> dict = DynamicCast<OpenGymDictContainer>(action);
+
+  Ptr<MatrixPropagationLossModel> lm = DynamicCast<MatrixPropagationLossModel>(m_loss_model);
   Ptr<OpenGymBoxContainer<float> > loss_ap_ap = DynamicCast<OpenGymBoxContainer<float> >(dict->Get("loss_ap_ap"));
   Ptr<OpenGymBoxContainer<float> > loss_sta_ap = DynamicCast<OpenGymBoxContainer<float> >(dict->Get("loss_sta_ap"));
   Ptr<OpenGymBoxContainer<float> > loss_sta_sta = DynamicCast<OpenGymBoxContainer<float> >(dict->Get("loss_sta_sta"));
@@ -206,6 +230,23 @@ MyGymEnv::ExecuteActions(Ptr<OpenGymDataContainer> action)
     }
   }
   counter = 0;
+
+
+  Ptr<OpenGymBoxContainer<float> > twtstarttime = DynamicCast<OpenGymBoxContainer<float> >(dict->Get("twtstarttime"));
+  Ptr<OpenGymBoxContainer<float> > twtoffset = DynamicCast<OpenGymBoxContainer<float> >(dict->Get("twtoffset"));
+  Ptr<OpenGymBoxContainer<float> > twtduration = DynamicCast<OpenGymBoxContainer<float> >(dict->Get("twtduration"));
+  Ptr<OpenGymBoxContainer<float> > twtperiodicity = DynamicCast<OpenGymBoxContainer<float> >(dict->Get("twtperiodicity"));
+
+    for (uint32_t i = 0; i < m_n_sta; i++)
+    {
+      auto m = m_staDevices.Get(i);
+      auto w = m->GetObject<WifiNetDevice>();
+      auto v = DynamicCast<StaWifiMac>(w->GetMac());
+      v->SetAttribute("twtstarttime", TimeValue(MicroSeconds(twtstarttime->GetValue(i))));
+      v->SetAttribute("twtoffset", TimeValue(MicroSeconds(twtoffset->GetValue(i))));
+      v->SetAttribute("twtduration", TimeValue(MicroSeconds(twtduration->GetValue(i))));
+      v->SetAttribute("twtperiodicity", TimeValue(MicroSeconds(twtperiodicity->GetValue(i))));
+    }
   return true;
 }
 

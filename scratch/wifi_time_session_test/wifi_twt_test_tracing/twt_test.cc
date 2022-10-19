@@ -181,6 +181,7 @@ int main (int argc, char *argv[])
   wifiPhy.Set ("ChannelSettings", StringValue ("{0, 1, BAND_S1GHZ, 0}"));
   wifiPhy.Set ("RxGain", DoubleValue (0) );
   wifiPhy.SetPcapDataLinkType (WifiPhyHelper::DLT_IEEE802_11_RADIO);
+  wifiPhy.SetErrorRateModel("ns3::PpvErrorRateModel");
 
 
   Ptr<FriisPropagationLossModel> lossModel = CreateObject<FriisPropagationLossModel> ();

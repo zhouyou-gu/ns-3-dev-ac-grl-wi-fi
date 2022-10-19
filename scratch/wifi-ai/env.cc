@@ -133,7 +133,7 @@ int main (int argc, char *argv[])
   wifiPhy.Set ("ChannelSettings", StringValue ("{0, 1, BAND_S1GHZ, 0}"));
   wifiPhy.Set ("RxGain", DoubleValue (0) );
   wifiPhy.SetPcapDataLinkType (WifiPhyHelper::DLT_IEEE802_11_RADIO);
-
+  wifiPhy.SetErrorRateModel("ns3::PpvErrorRateModel");
 
   Ptr<MatrixPropagationLossModel> lossModel = CreateObject<MatrixPropagationLossModel> ();
   lossModel->SetDefaultLoss (200); // set default loss to 200 dB (no link)
@@ -141,8 +141,6 @@ int main (int argc, char *argv[])
   Ptr<MyGymEnv> myGymEnv = CreateObject<MyGymEnv> (n_ap,n_sta, lossModel);
   myGymEnv->m_staNodes.Add(sta_nodes);
   myGymEnv->m_apNodes.Add(ap_nodes);
-  myGymEnv->SetOpenGymInterface(openGymInterface);
-  myGymEnv->Notify();
 
   Ptr<YansWifiChannel> yanswc = CreateObject <YansWifiChannel> ();
   yanswc->SetPropagationLossModel (lossModel);
@@ -187,18 +185,7 @@ int main (int argc, char *argv[])
                    "QosSupported", BooleanValue (false)
   );
   NetDeviceContainer staDevice = wifi.Install (wifiPhy, wifiMac, sta_nodes);
-    for (uint32_t i = 0; i < n_sta; i++)
-    {
-      auto m = staDevice.Get(i);
-      auto w = m->GetObject<WifiNetDevice>();
-      auto v = DynamicCast<StaWifiMac>(w->GetMac());
-      v->SetAttribute("twtstarttime", TimeValue(MicroSeconds(10000000)));
-      v->SetAttribute("twtoffset", TimeValue(MicroSeconds(0.)));
-      v->SetAttribute("twtduration", TimeValue(MicroSeconds(500000)));
-      v->SetAttribute("twtperiodicity", TimeValue(MicroSeconds(1000000)));
-    }
-
-
+  myGymEnv->m_staDevices.Add(staDevice);
 
   PointToPointHelper p2p;
   p2p.SetDeviceAttribute ("DataRate", StringValue ("100Gbps"));
@@ -308,7 +295,13 @@ int main (int argc, char *argv[])
   }
 
   Simulator::Stop (Seconds (time_for_test_end+0.1));
+
+
+  myGymEnv->SetOpenGymInterface(openGymInterface);
+  myGymEnv->Notify();
   Simulator::Run ();
+
+
   for (int i = 0; i < n_sta; ++i) {
     auto m = staDevice.Get(i);
     auto w = m->GetObject<WifiNetDevice>();

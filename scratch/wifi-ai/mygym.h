@@ -6,6 +6,7 @@
 #define MY_GYM_ENTITY_H
 
 #include <ns3/node-container.h>
+#include <ns3/net-device-container.h>
 #include <ns3/application-container.h>
 #include <ns3/propagation-loss-model.h>
 #include "ns3/opengym-module.h"
@@ -32,6 +33,7 @@ public:
 
   NodeContainer m_apNodes;
   NodeContainer m_staNodes;
+  NetDeviceContainer m_staDevices;
   ApplicationContainer m_serverApps;
   bool is_simulation_end;
 

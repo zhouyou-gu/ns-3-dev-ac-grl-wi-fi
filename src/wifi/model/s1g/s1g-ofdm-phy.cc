@@ -103,6 +103,61 @@ const PhyEntity::ModulationLookupTable S1gOfdmPhy::m_s1gOfdmModulationLookupTabl
 
 };
 
+
+const std::map<std::string,uint32_t> S1gOfdmPhy::m_s1gOfdmModulationToBandwidthLookupTable {
+           // Unique name           bw
+        {"S1gOfdmRate0_30MbpsBW1MHz",1},
+       	{"S1gOfdmRate0_60MbpsBW1MHz",1},
+       	{"S1gOfdmRate0_90MbpsBW1MHz",1},
+       	{"S1gOfdmRate1_20MbpsBW1MHz",1},
+       	{"S1gOfdmRate1_80MbpsBW1MHz",1},
+       	{"S1gOfdmRate2_40MbpsBW1MHz",1},
+       	{"S1gOfdmRate2_70MbpsBW1MHz",1},
+       	{"S1gOfdmRate3_00MbpsBW1MHz",1},
+       	{"S1gOfdmRate3_60MbpsBW1MHz",1},
+       	{"S1gOfdmRate4_00MbpsBW1MHz",1},
+       	{"S1gOfdmRate0_15MbpsBW1MHz",1},
+       	{"S1gOfdmRate0_65MbpsBW2MHz",2},
+       	{"S1gOfdmRate1_30MbpsBW2MHz",2},
+       	{"S1gOfdmRate1_95MbpsBW2MHz",2},
+       	{"S1gOfdmRate2_60MbpsBW2MHz",2},
+       	{"S1gOfdmRate3_90MbpsBW2MHz",2},
+       	{"S1gOfdmRate5_20MbpsBW2MHz",2},
+       	{"S1gOfdmRate5_85MbpsBW2MHz",2},
+       	{"S1gOfdmRate6_50MbpsBW2MHz",2},
+       	{"S1gOfdmRate7_80MbpsBW2MHz",2},
+       	{"S1gOfdmRate1_35MbpsBW4MHz",4},
+       	{"S1gOfdmRate2_70MbpsBW4MHz",4},
+       	{"S1gOfdmRate4_05MbpsBW4MHz",4},
+       	{"S1gOfdmRate5_40MbpsBW4MHz",4},
+       	{"S1gOfdmRate8_10MbpsBW4MHz",4},
+       	{"S1gOfdmRate10_80MbpsBW4MHz",4},
+       	{"S1gOfdmRate12_20MbpsBW4MHz",4},
+       	{"S1gOfdmRate13_50MbpsBW4MHz",4},
+       	{"S1gOfdmRate16_20MbpsBW4MHz",4},
+       	{"S1gOfdmRate18_00MbpsBW4MHz",4},
+       	{"S1gOfdmRate2_93MbpsBW8MHz",8},
+       	{"S1gOfdmRate5_85MbpsBW8MHz",8},
+       	{"S1gOfdmRate8_78MbpsBW8MHz",8},
+       	{"S1gOfdmRate11_70MbpsBW8MHz",8},
+       	{"S1gOfdmRate17_60MbpsBW8MHz",8},
+       	{"S1gOfdmRate23_40MbpsBW8MHz",8},
+       	{"S1gOfdmRate26_30MbpsBW8MHz",8},
+       	{"S1gOfdmRate29_30MbpsBW8MHz",8},
+       	{"S1gOfdmRate35_10MbpsBW8MHz",8},
+       	{"S1gOfdmRate39_00MbpsBW8MHz",8},
+       	{"S1gOfdmRate5_85MbpsBW16MHz",16},
+       	{"S1gOfdmRate11_70MbpsBW16MHz",16},
+       	{"S1gOfdmRate17_60MbpsBW16MHz",16},
+       	{"S1gOfdmRate23_40MbpsBW16MHz",16},
+       	{"S1gOfdmRate35_10MbpsBW16MHz",16},
+       	{"S1gOfdmRate46_80MbpsBW16MHz",16},
+       	{"S1gOfdmRate52_70MbpsBW16MHz",16},
+       	{"S1gOfdmRate58_50MbpsBW16MHz",16},
+       	{"S1gOfdmRate70_20MbpsBW16MHz",16},
+       	{"S1gOfdmRate78_00MbpsBW16MHz",16},
+   };
+
 /// S1G OFDM rates in bits per second
 //static const std::array<uint64_t, 8> s_s1gOfdmRatesBpsList =
 //        {  6000000,  9000000, 12000000, 18000000,
@@ -640,6 +695,12 @@ S1gOfdmPhy::GetMaxPsduSize (void) const
   return 4095;
 }
 
+PhyEntity::ModulationLookupTable S1gOfdmPhy::GetModulationLookupTable() {
+    return m_s1gOfdmModulationLookupTable;
+}
+std::map<std::string,uint32_t> S1gOfdmPhy::GetModulationBandLookupTable() {
+    return m_s1gOfdmModulationToBandwidthLookupTable;
+}
 } //namespace ns3
 
 namespace {

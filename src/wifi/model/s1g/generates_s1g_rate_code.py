@@ -1,6 +1,6 @@
 import csv
 from pprint import pprint
-
+import os
 ##use this code to format the mcs table from
 # https://en.wikipedia.org/wiki/IEEE_802.11ah
 #
@@ -26,6 +26,8 @@ class mcs:
 
 MCS_LIST = []
 PATH_FORMATED = 'mcs_data_rate_table_formated.txt'
+this_file_path = os.path.dirname(os.path.abspath(__file__))
+PATH_FORMATED = os.path.join(this_file_path,PATH_FORMATED)
 i = 0
 for b in range(5):
     with open(PATH_FORMATED, newline='') as csvfile:
@@ -142,3 +144,10 @@ for b in range(5):
     wf.write('\t\t}\n')
 
 
+PATH = 'gen_s1g_mode_band_lookuptable_h.txt'
+wf = open(PATH,'w')
+for m in MCS_LIST:
+    '''
+    { "OfdmRate54Mbps",         { WIFI_CODE_RATE_3_4, 64 } },
+    '''
+    wf.write('\t{"S1g'+m.uni_name+'",'+str(m.bw)+'},\n')

@@ -207,6 +207,8 @@ namespace ns3 {
          */
         static bool IsAllowed (const WifiTxVector& txVector);
 
+        static ModulationLookupTable GetModulationLookupTable ();
+        static std::map<std::string,uint32_t> GetModulationBandLookupTable();
     private:
         WifiMode GetHeaderMode (const WifiTxVector& txVector) const override;
         Time GetPreambleDuration (const WifiTxVector& txVector) const override;
@@ -225,6 +227,7 @@ namespace ns3 {
         static const PpduFormats m_ofdmPpduFormats; //!< OFDM PPDU formats
 
         static const ModulationLookupTable m_s1gOfdmModulationLookupTable; //!< lookup table to retrieve code rate and constellation size corresponding to a unique name of modulation
+        static const std::map<std::string , uint32_t> m_s1gOfdmModulationToBandwidthLookupTable;
     }; //class S1gOfdmPhy
 
 } //namespace ns3
