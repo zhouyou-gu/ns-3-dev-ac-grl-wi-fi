@@ -187,7 +187,16 @@ int main (int argc, char *argv[])
                    "QosSupported", BooleanValue (false)
   );
   NetDeviceContainer staDevice = wifi.Install (wifiPhy, wifiMac, sta_nodes);
+  // setup sta tx power
+    for (uint32_t j = 0; j < n_sta; j++) {
+        auto m = staDevice.Get(j);
+        auto w = m->GetObject<WifiNetDevice>();
+        auto v = DynamicCast<WifiPhy>(w->GetPhy());
+        v->SetTxPowerStart(0.);
+        v->SetTxPowerEnd(0.);
+    }
 
+  // setup sta mcs
     for (uint32_t j = 0; j < n_sta; j++) {
         double max_gain = -std::numeric_limits<double>::infinity();
         uint32_t max_i = 0;
