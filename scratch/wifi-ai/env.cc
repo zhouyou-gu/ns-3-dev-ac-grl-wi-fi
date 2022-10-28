@@ -53,27 +53,23 @@ void cb_tx_start(Ptr<const Packet> packet, double power){
     Mac48Address src = head.GetAddr2 ();
     if (head.GetType () == WIFI_MAC_DATA)
       {
-          NS_LOG_UNCOND("cb_tx_start");
-          std::cout<< "tx_start:" << (Simulator::Now()- Seconds(10)).GetMilliSeconds() << ":" << src <<std::endl;
+          NS_LOG_UNCOND("cb_tx_start:" << (Simulator::Now()- Seconds(10)).GetMilliSeconds() << "," << head.GetAddr2 () << "," << head.GetAddr1 ());
       }
 }
 void cb_tx_ended(Ptr<const Packet> packet){
     WifiMacHeader head;
     packet->PeekHeader (head);
-    Mac48Address src = head.GetAddr2 ();
     if (head.GetType () == WIFI_MAC_DATA)
       {
-          NS_LOG_UNCOND("cb_tx_ended");
-          std::cout<< "tx_ended:" << (Simulator::Now()- Seconds(10)).GetMilliSeconds() << ":" << src <<std::endl;
+          NS_LOG_UNCOND("cb_tx_end:" << (Simulator::Now()- Seconds(10)).GetMilliSeconds() << "," << head.GetAddr2 () << "," << head.GetAddr1 ());
       }
 }
 void cb_rx(Ptr<const Packet> packet){
     WifiMacHeader head;
     packet->PeekHeader (head);
-    Mac48Address src = head.GetAddr2 ();
     if (head.IsQosData() or head.IsData())
       {
-          NS_LOG_UNCOND("cb_rx" << (Simulator::Now()- Seconds(10)).GetMilliSeconds() << ":" << src );
+          NS_LOG_UNCOND("cb_rx:" << (Simulator::Now()- Seconds(10)).GetMilliSeconds() << "," << head.GetAddr2 () << "," << head.GetAddr1 ());
       }
 }
 int main (int argc, char *argv[])
@@ -100,7 +96,7 @@ int main (int argc, char *argv[])
 
   int time_for_test_start = 10;
 
-  bool verbose = true;
+  bool verbose = false;
 
   CommandLine cmd (__FILE__);
   cmd.AddValue ("phyMode", "Wifi Phy mode", phyMode);
@@ -177,10 +173,7 @@ int main (int argc, char *argv[])
 
   Ptr<YansWifiChannel> yanswc = CreateObject <YansWifiChannel> ();
   yanswc->SetPropagationLossModel (lossModel);
-  Ptr<RandomPropagationDelayModel> propagationdelayModel = CreateObject <RandomPropagationDelayModel>();
-  propagationdelayModel->SetAttribute ("Variable",StringValue("ns3::UniformRandomVariable[Min=0.0|Max=3e-6]"));
-  yanswc->SetPropagationDelayModel (propagationdelayModel);
-//  yanswc->SetPropagationDelayModel (CreateObject <ConstantSpeedPropagationDelayModel> ());
+  yanswc->SetPropagationDelayModel (CreateObject <ConstantSpeedPropagationDelayModel> ());
   wifiPhy.SetChannel (yanswc);
 
   // Add a mac and disable rate control
@@ -197,17 +190,13 @@ int main (int argc, char *argv[])
                    "QosSupported", BooleanValue (false)
   );
   NetDeviceContainer apDevice = wifi.Install (wifiPhy, wifiMac, ap_nodes);
-  for (uint32_t i = 0; i < n_ap; i++)
-  {
-    auto m = apDevice.Get(i);
-    auto w = m->GetObject<WifiNetDevice>();
-    auto v = DynamicCast<ApWifiMac>(w->GetMac());
-    v->SetBeaconOffset(i* (v->GetBeaconInterval()/n_ap) );
-    std::cout<< "AP: "<< i <<" BeaconOffset:" << v->GetBeaconOffset() << std::endl;
-    v->TraceConnectWithoutContext("MacRxDrop",MakeCallback(&cb));
-    v->TraceConnectWithoutContext("AssociatedSta",MakeCallback(&cb_asso));
-    v->TraceConnectWithoutContext("DeAssociatedSta",MakeCallback(&cb_deasso));
-    v->GetTxop()->GetWifiMacQueue()->SetMaxSize (QueueSize ("500p"));
+  for (uint32_t i = 0; i < n_ap; i++) {
+        auto m = apDevice.Get(i);
+        auto w = m->GetObject<WifiNetDevice>();
+        auto v = DynamicCast<ApWifiMac>(w->GetMac());
+        v->SetBeaconOffset(i * (v->GetBeaconInterval() / n_ap));
+        std::cout << "AP: " << i << " BeaconOffset:" << v->GetBeaconOffset() << std::endl;
+        v->GetTxop()->GetWifiMacQueue()->SetMaxSize(QueueSize("500p"));
   }
 
   // setup sta
@@ -234,16 +223,24 @@ int main (int argc, char *argv[])
     v->SetAttribute("twtduration", TimeValue(MicroSeconds(0.)));
     v->SetAttribute("twtperiodicity", TimeValue(MicroSeconds(0.)));
   }
-
-  for (uint32_t i = 0; i < n_sta; i++)
-    {
-      auto m = staDevice.Get(i);
-      auto w = m->GetObject<WifiNetDevice>();
-      auto v = DynamicCast<WifiPhy>(w->GetPhy());
-      v->TraceConnectWithoutContext("PhyTxBegin",MakeCallback(&cb_tx_start));
-      v->TraceConnectWithoutContext("PhyTxEnd",MakeCallback(&cb_tx_ended));
-    }
-
+  if (verbose) {
+      for (uint32_t i = 0; i < n_sta; i++) {
+          auto m = staDevice.Get(i);
+          auto w = m->GetObject<WifiNetDevice>();
+          auto v = DynamicCast<WifiPhy>(w->GetPhy());
+          v->TraceConnectWithoutContext("PhyTxBegin", MakeCallback(&cb_tx_start));
+          v->TraceConnectWithoutContext("PhyTxEnd", MakeCallback(&cb_tx_ended));
+      }
+      for (int i = 0; i < n_ap; ++i) {
+          auto m = apDevice.Get(i);
+          auto w = m->GetObject<WifiNetDevice>();
+          auto v = w->GetMac();
+          v->TraceConnectWithoutContext("MacRx", MakeCallback(&cb_rx));
+          v->TraceConnectWithoutContext("MacRxDrop", MakeCallback(&cb));
+          v->TraceConnectWithoutContext("AssociatedSta", MakeCallback(&cb_asso));
+          v->TraceConnectWithoutContext("DeAssociatedSta", MakeCallback(&cb_deasso));
+      }
+  }
   myGymEnv->m_staDevices.Add(staDevice);
 
   PointToPointHelper p2p;
@@ -320,7 +317,10 @@ int main (int argc, char *argv[])
     sta_r->AddHostRouteTo (server_to_gate_intf.GetAddress(0),staInterface.Get(i).second);
     sta_r->AddHostRouteTo (server_to_gate_intf.GetAddress(1),staInterface.Get(i).second);
   }
-
+    // Notify before arp, mcs, association start, because these processes need path loss
+    myGymEnv->SetOpenGymInterface(openGymInterface);
+    myGymEnv->Notify();
+    // Set up ARP
   for (int j = 0; j < n_sta; j++) {
       std::vector<double> gain_list;
       for (int i = 0; i < n_ap; i++){
@@ -354,14 +354,6 @@ int main (int argc, char *argv[])
       std::cout<< "STA: " << j << ", arp: " << addr << std::endl;
   }
 
-    for (int i = 0; i < n_ap; ++i) {
-      auto m = apDevice.Get(i);
-      auto w = m->GetObject<WifiNetDevice>();
-      auto v = w->GetMac();
-      v->TraceConnectWithoutContext("MacRx",MakeCallback(&cb_rx));
-    }
-  myGymEnv->SetOpenGymInterface(openGymInterface);
-  myGymEnv->Notify();
     // setup sta mcs
     for (uint32_t j = 0; j < n_sta; j++) {
           double max_gain = -std::numeric_limits<double>::infinity();

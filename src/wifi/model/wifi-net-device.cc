@@ -403,6 +403,7 @@ WifiNetDevice::ForwardUp (Ptr<const Packet> packet, Mac48Address from, Mac48Addr
     }
   else
     {
+      NS_LOG_FUNCTION (this << "NetDevice::PACKET_OTHERHOST" << packet << "from" << from << "to" << to << "this addr" <<  m_mac->GetAddress ());
       copy->RemoveHeader (llc);
     }
 
