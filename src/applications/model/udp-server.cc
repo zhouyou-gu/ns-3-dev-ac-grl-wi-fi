@@ -160,6 +160,10 @@ UdpServer::StopApplication ()
   m_mean_aoi = m_aoi_area / (double) (m_stopTime.GetMicroSeconds() - m_startTime.GetMicroSeconds());
   m_delay_avg = m_delay_sum / (double) m_received;
   m_interval_avg = m_interval_sum / (double) m_received;
+
+  Time t = Simulator::Now() - m_startTime;
+  m_throughput = ((double) m_received)/t.GetSeconds();
+
   if (m_socket != 0)
     {
       m_socket->SetRecvCallback (MakeNullCallback<void, Ptr<Socket> > ());
@@ -267,7 +271,7 @@ UdpServer::GetAvgThroughput_pkt ()
   {
     NS_LOG_UNCOND("Interval should be calculated after the app is stopped");
   }
-  return 1./m_interval_avg;
+  return m_throughput;
 }
 
 } // Namespace ns3

@@ -53,7 +53,7 @@ void cb_tx_start(Ptr<const Packet> packet, double power){
     Mac48Address src = head.GetAddr2 ();
     if (head.GetType () == WIFI_MAC_DATA)
       {
-          NS_LOG_UNCOND("cb_tx_start:" << (Simulator::Now()- Seconds(10)).GetMilliSeconds() << "," << head.GetAddr2 () << "," << head.GetAddr1 ());
+          NS_LOG_UNCOND("cb_tx_start:" << (Simulator::Now()- Seconds(10)).GetMicroSeconds() << "," << head.GetAddr2 () << "," << head.GetAddr1 ());
       }
 }
 void cb_tx_ended(Ptr<const Packet> packet){
@@ -61,7 +61,7 @@ void cb_tx_ended(Ptr<const Packet> packet){
     packet->PeekHeader (head);
     if (head.GetType () == WIFI_MAC_DATA)
       {
-          NS_LOG_UNCOND("cb_tx_end:" << (Simulator::Now()- Seconds(10)).GetMilliSeconds() << "," << head.GetAddr2 () << "," << head.GetAddr1 ());
+          NS_LOG_UNCOND("cb_tx_end:" << (Simulator::Now()- Seconds(10)).GetMicroSeconds() << "," << head.GetAddr2 () << "," << head.GetAddr1 ());
       }
 }
 void cb_rx(Ptr<const Packet> packet){

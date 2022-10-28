@@ -116,6 +116,7 @@ private:
   double m_delay_avg = 0;
   double m_interval_sum = 0;
   double m_interval_avg = 0;
+  double m_throughput = 0;
 
   bool m_is_stopped = false;
 
