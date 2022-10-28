@@ -96,7 +96,7 @@ int main (int argc, char *argv[])
 
   int time_for_test_start = 10;
 
-  bool verbose = true;
+  bool verbose = false;
 
   CommandLine cmd (__FILE__);
   cmd.AddValue ("phyMode", "Wifi Phy mode", phyMode);
