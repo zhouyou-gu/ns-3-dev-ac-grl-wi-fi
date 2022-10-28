@@ -237,23 +237,23 @@ MyGymEnv::ExecuteActions(Ptr<OpenGymDataContainer> action)
   Ptr<OpenGymBoxContainer<float> > twtduration = DynamicCast<OpenGymBoxContainer<float> >(dict->Get("twtduration"));
   Ptr<OpenGymBoxContainer<float> > twtperiodicity = DynamicCast<OpenGymBoxContainer<float> >(dict->Get("twtperiodicity"));
 
-//    for (uint32_t i = 0; i < m_n_sta; i++)
-//    {
-//      auto m = m_staDevices.Get(i);
-//      auto w = m->GetObject<WifiNetDevice>();
-//      auto v = DynamicCast<StaWifiMac>(w->GetMac());
-//      v->SetAttribute("twtstarttime", TimeValue(MicroSeconds(twtstarttime->GetValue(i))));
-//      v->SetAttribute("twtoffset", TimeValue(MicroSeconds(twtoffset->GetValue(i))));
-//      v->SetAttribute("twtduration", TimeValue(MicroSeconds(twtduration->GetValue(i))));
-//      v->SetAttribute("twtperiodicity", TimeValue(MicroSeconds(twtperiodicity->GetValue(i))));
-//
+    for (uint32_t i = 0; i < m_n_sta; i++)
+    {
+      auto m = m_staDevices.Get(i);
+      auto w = m->GetObject<WifiNetDevice>();
+      auto v = DynamicCast<StaWifiMac>(w->GetMac());
+      v->SetAttribute("twtstarttime", TimeValue(MicroSeconds(twtstarttime->GetValue(i))));
+      v->SetAttribute("twtoffset", TimeValue(MicroSeconds(twtoffset->GetValue(i))));
+      v->SetAttribute("twtduration", TimeValue(MicroSeconds(twtduration->GetValue(i))));
+      v->SetAttribute("twtperiodicity", TimeValue(MicroSeconds(twtperiodicity->GetValue(i))));
+
 //      NS_LOG_UNCOND("TWT Config STA: " << i << ", "
 //                                       << twtstarttime->GetValue(i) << ", "
 //                                       << twtoffset->GetValue(i) << ", "
 //                                       << twtduration->GetValue(i) << ", "
 //                                       << twtperiodicity->GetValue(i) << ", "
 //      );
-//    }
+    }
   return true;
 }
 
