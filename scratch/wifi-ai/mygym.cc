@@ -84,8 +84,8 @@ MyGymEnv::GetActionSpace()
 
   std::string dtype = TypeNameGet<float> ();
 
-  float low = -1000.0;
-  float high = 0.0;
+  float low = 0.0;
+  float high = 1000.0;
   std::vector<uint32_t> shape_loss_ap_ap= {(uint32_t)m_n_ap * (uint32_t)m_n_ap,};
   std::vector<uint32_t> shape_loss_sta_ap= {(uint32_t)m_n_ap * (uint32_t)m_n_sta,};
   std::vector<uint32_t> shape_loss_sta_sta= {(uint32_t)m_n_sta * (uint32_t)m_n_sta,};
@@ -206,16 +206,16 @@ MyGymEnv::ExecuteActions(Ptr<OpenGymDataContainer> action)
 
   for (uint32_t i = 0; i < m_n_ap; i++){
     for (uint32_t j = 0; j < m_n_ap; j++){
-      lm->SetLoss (m_apNodes.Get (i)->GetObject<MobilityModel> (), m_apNodes.Get (j)->GetObject<MobilityModel> (), -loss_ap_ap->GetValue(counter),
+      lm->SetLoss (m_apNodes.Get (i)->GetObject<MobilityModel> (), m_apNodes.Get (j)->GetObject<MobilityModel> (), loss_ap_ap->GetValue(counter),
                    false);
       counter++;
     }
   }
   counter = 0;
 
-  for (uint32_t i = 0; i < m_n_ap; i++){
-    for (uint32_t j = 0; j < m_n_sta; j++){
-      lm->SetLoss (m_apNodes.Get (i)->GetObject<MobilityModel> (), m_staNodes.Get (j)->GetObject<MobilityModel> (), -loss_sta_ap->GetValue(counter),
+  for (uint32_t i = 0; i < m_n_sta; i++){
+    for (uint32_t j = 0; j < m_n_ap; j++){
+      lm->SetLoss (m_staNodes.Get (i)->GetObject<MobilityModel> (), m_apNodes.Get (j)->GetObject<MobilityModel> (), loss_sta_ap->GetValue(counter),
                      true);
       counter++;
     }
@@ -224,7 +224,7 @@ MyGymEnv::ExecuteActions(Ptr<OpenGymDataContainer> action)
 
   for (uint32_t i = 0; i < m_n_sta; i++){
     for (uint32_t j = 0; j < m_n_sta; j++){
-      lm->SetLoss (m_staNodes.Get (i)->GetObject<MobilityModel> (), m_staNodes.Get (j)->GetObject<MobilityModel> (), -loss_sta_sta->GetValue(counter),
+      lm->SetLoss (m_staNodes.Get (i)->GetObject<MobilityModel> (), m_staNodes.Get (j)->GetObject<MobilityModel> (), loss_sta_sta->GetValue(counter),
                    false);
       counter++;
     }
@@ -237,16 +237,23 @@ MyGymEnv::ExecuteActions(Ptr<OpenGymDataContainer> action)
   Ptr<OpenGymBoxContainer<float> > twtduration = DynamicCast<OpenGymBoxContainer<float> >(dict->Get("twtduration"));
   Ptr<OpenGymBoxContainer<float> > twtperiodicity = DynamicCast<OpenGymBoxContainer<float> >(dict->Get("twtperiodicity"));
 
-    for (uint32_t i = 0; i < m_n_sta; i++)
-    {
-      auto m = m_staDevices.Get(i);
-      auto w = m->GetObject<WifiNetDevice>();
-      auto v = DynamicCast<StaWifiMac>(w->GetMac());
-      v->SetAttribute("twtstarttime", TimeValue(MicroSeconds(twtstarttime->GetValue(i))));
-      v->SetAttribute("twtoffset", TimeValue(MicroSeconds(twtoffset->GetValue(i))));
-      v->SetAttribute("twtduration", TimeValue(MicroSeconds(twtduration->GetValue(i))));
-      v->SetAttribute("twtperiodicity", TimeValue(MicroSeconds(twtperiodicity->GetValue(i))));
-    }
+//    for (uint32_t i = 0; i < m_n_sta; i++)
+//    {
+//      auto m = m_staDevices.Get(i);
+//      auto w = m->GetObject<WifiNetDevice>();
+//      auto v = DynamicCast<StaWifiMac>(w->GetMac());
+//      v->SetAttribute("twtstarttime", TimeValue(MicroSeconds(twtstarttime->GetValue(i))));
+//      v->SetAttribute("twtoffset", TimeValue(MicroSeconds(twtoffset->GetValue(i))));
+//      v->SetAttribute("twtduration", TimeValue(MicroSeconds(twtduration->GetValue(i))));
+//      v->SetAttribute("twtperiodicity", TimeValue(MicroSeconds(twtperiodicity->GetValue(i))));
+//
+//      NS_LOG_UNCOND("TWT Config STA: " << i << ", "
+//                                       << twtstarttime->GetValue(i) << ", "
+//                                       << twtoffset->GetValue(i) << ", "
+//                                       << twtduration->GetValue(i) << ", "
+//                                       << twtperiodicity->GetValue(i) << ", "
+//      );
+//    }
   return true;
 }
 

@@ -3,6 +3,7 @@
 #include "ppv-error-rate-model.h"
 #include "wifi-utils.h"
 #include "wifi-tx-vector.h"
+#include "ns3/simulator.h"
 
 namespace ns3 {
 
@@ -42,7 +43,9 @@ PpvErrorRateModel::DoGetChunkSuccessRate (WifiMode mode, const WifiTxVector& txV
   double nu = - (double)(nbits) * log(2) + D*B*log(1+snr);
   double de = sqrt(D*B*cd);
   double error = 1./2.*erfc(nu/de/sqrt(2));
-//    NS_LOG_UNCOND(cd <<"," << nu <<"," <<de <<"," <<error <<"," <<cd <<",");
+//  NS_LOG_UNCOND(error <<",  " << Simulator::Now().GetMicroSeconds()<<", " << nbits);
+//
+//  NS_LOG_UNCOND(cd <<"," << nu <<"," <<de <<"," << error <<"," <<cd <<",");
 //    NS_LOG_UNCOND(D <<"," << B<< ":"<< nu/de/sqrt(2));
 //    NS_LOG_UNCOND(-(double)(nbits) <<"," << D*B*log(1+snr));
 //    if(error>0.5)

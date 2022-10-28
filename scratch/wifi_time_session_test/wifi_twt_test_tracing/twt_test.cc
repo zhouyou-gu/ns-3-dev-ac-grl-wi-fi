@@ -41,13 +41,11 @@ void cb(Ptr<const Packet> p){
 
 
 void cb_asso(uint16_t /* AID */ a, Mac48Address b){
-  std::cout<< "AssociatedSta:" << a << ":" << b <<std::endl;
-
+  NS_LOG_UNCOND("AssociatedSta:" << a << ":" << b  <<  " time:" << (Simulator::Now()- Seconds(10)).GetMilliSeconds() );
 }
 void cb_deasso(uint16_t /* AID */ a, Mac48Address b){
-  std::cout<< "DeAssociatedSta:" << a << ":" << b <<std::endl;
+  NS_LOG_UNCOND("DeassociatedSta:" << a << ":" << b  <<  " time:" << (Simulator::Now()- Seconds(10)).GetMilliSeconds() );
 }
-
 void cb_tx_start(Ptr<const Packet> packet, double power){
     WifiMacHeader head;
     packet->PeekHeader (head);
@@ -68,36 +66,29 @@ void cb_tx_ended(Ptr<const Packet> packet){
           std::cout<< "tx_ended:" << (Simulator::Now()- Seconds(10)).GetMilliSeconds() << ":" << src <<std::endl;
       }
 }
-
+void cb_rx(Ptr<const Packet> packet){
+    WifiMacHeader head;
+    packet->PeekHeader (head);
+    Mac48Address src = head.GetAddr2 ();
+    if (head.IsQosData() or head.IsData())
+      {
+          NS_LOG_UNCOND("cb_rx" << (Simulator::Now()- Seconds(10)).GetMilliSeconds() << ":" << src );
+      }
+}
 int main (int argc, char *argv[])
 {
   LogComponentEnableAll (LOG_PREFIX_TIME);
   LogComponentEnableAll (LOG_PREFIX_NODE);
-//
   LogComponentEnable ("wifi-test", LOG_LEVEL_INFO);
-//
-//  LogComponentEnable ("UdpServer", ns3::LOG_LEVEL_ALL);
-//  LogComponentEnable ("UdpClient", ns3::LOG_LEVEL_ALL);
-//  LogComponentEnable ("UdpSocketImpl", ns3::LOG_LEVEL_ALL);
-//  LogComponentEnable ("Ipv4Interface", ns3::LOG_LEVEL_ALL);
-//  LogComponentEnable ("Ipv4L3Protocol", ns3::LOG_LEVEL_ALL);
-//  LogComponentEnable ("Ipv4", ns3::LOG_LEVEL_ALL);
-//  LogComponentEnable ("NetDevice", ns3::LOG_LEVEL_ALL);
-//  LogComponentEnable ("ArpL3Protocol", ns3::LOG_LEVEL_ALL);
-//  LogComponentEnable ("ArpCache", ns3::LOG_LEVEL_ALL);
-//  LogComponentEnable ("PointToPointChannel", ns3::LOG_LEVEL_ALL);
-//  LogComponentEnable ("PointToPointNetDevice", ns3::LOG_LEVEL_ALL);
-//  LogComponentEnable ("YansWifiChannel", ns3::LOG_LEVEL_WARN);
-//  LogComponentEnable ("InterferenceHelper", ns3::LOG_LEVEL_WARN);
-//  LogComponentEnable ("WifiPhyStateHelper", ns3::LOG_LEVEL_WARN);
+
 
   std::string phyMode ("S1gOfdmRate0_30MbpsBW1MHz");
   uint32_t packetSize = 20; // bytes
   uint32_t numPackets = 100000;
-  uint32_t interval_in_us = 40000;
+  uint32_t interval_in_us = 1000000;
 
   int n_ap = 4;
-  int n_sta = 10;
+  int n_sta = 1;
 
   uint32_t simSeed = 1000;
   uint32_t openGymPort = 5000;
@@ -108,7 +99,7 @@ int main (int argc, char *argv[])
 
   int time_for_test_start = 10;
 
-  bool verbose = false;
+  bool verbose = true;
 
   CommandLine cmd (__FILE__);
   cmd.AddValue ("phyMode", "Wifi Phy mode", phyMode);
@@ -126,7 +117,13 @@ int main (int argc, char *argv[])
   int time_for_test_end = time_for_test_start + simTime;
   Time interval = MicroSeconds(interval_in_us);
 
-  std::cout << "interval_in_us:" <<interval_in_us << std::endl;
+  std::cout << "packetSize:" << packetSize << std::endl;
+  std::cout << "numPackets:" << numPackets << std::endl;
+  std::cout << "interval_in_us:" << interval_in_us << std::endl;
+  std::cout << "n_ap:" << n_ap << std::endl;
+  std::cout << "n_sta:" << n_sta << std::endl;
+  std::cout << "simSeed:" << interval_in_us << std::endl;
+  std::cout << "simTime:" << simTime << std::endl;
 
   // Fix non-unicast data rate to be the same as that of unicast
   Config::SetDefault ("ns3::WifiRemoteStationManager::NonUnicastMode",
@@ -178,14 +175,15 @@ int main (int argc, char *argv[])
   // The below set of helpers will help us to put together the wifi NICs we want
   WifiHelper wifi;
   wifi.SetStandard (ns3::WIFI_STANDARD_80211ah);
+//    wifi.EnableLogComponents ();  // Turn on all Wifi logging
 
   YansWifiPhyHelper wifiPhy;
   wifiPhy.Set ("ChannelSettings", StringValue ("{0, 1, BAND_S1GHZ, 0}"));
-  wifiPhy.Set ("RxSensitivity", DoubleValue (-95.) );
   wifiPhy.Set ("CcaEdThreshold", DoubleValue (-75.) );
   wifiPhy.SetPcapDataLinkType (WifiPhyHelper::DLT_IEEE802_11_RADIO);
   wifiPhy.SetErrorRateModel("ns3::PpvErrorRateModel");
-
+  wifiPhy.SetPreambleDetectionModel ("ns3::ThresholdPreambleDetectionModel",
+                                     "MinimumRssi", DoubleValue (-95.));
 
   Ptr<FriisPropagationLossModel> lossModel = CreateObject<FriisPropagationLossModel> ();
   lossModel->SetFrequency(1e9);
@@ -202,8 +200,6 @@ int main (int argc, char *argv[])
   WifiMacHelper wifiMac;
   wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager",
                                 "DataMode", StringValue (phyMode),
-//                                "MaxSsrc", UintegerValue(2),
-//                                "MaxSlrc", UintegerValue(2),
                                 "ControlMode", StringValue (phyMode));
 
   // Setup the rest of the MAC
@@ -233,15 +229,23 @@ int main (int argc, char *argv[])
                    "QosSupported", BooleanValue (false)
   );
   NetDeviceContainer staDevice = wifi.Install (wifiPhy, wifiMac, sta_nodes);
+  // setup sta tx power
+    for (uint32_t j = 0; j < n_sta; j++) {
+        auto m = staDevice.Get(j);
+        auto w = m->GetObject<WifiNetDevice>();
+        auto v = DynamicCast<WifiPhy>(w->GetPhy());
+        v->SetTxPowerStart(10.);
+        v->SetTxPowerEnd(10.);
+    }
   for (uint32_t i = 0; i < n_sta; i++)
   {
     auto m = staDevice.Get(i);
     auto w = m->GetObject<WifiNetDevice>();
     auto v = DynamicCast<StaWifiMac>(w->GetMac());
-    v->SetAttribute("twtstarttime", TimeValue(MicroSeconds(10000000)));
+    v->SetAttribute("twtstarttime", TimeValue(MicroSeconds(0.)));
     v->SetAttribute("twtoffset", TimeValue(MicroSeconds(0.)));
-    v->SetAttribute("twtduration", TimeValue(MicroSeconds(500000)));
-    v->SetAttribute("twtperiodicity", TimeValue(MicroSeconds(1000000)));
+    v->SetAttribute("twtduration", TimeValue(MicroSeconds(0.)));
+    v->SetAttribute("twtperiodicity", TimeValue(MicroSeconds(100000)));
   }
 
   for (uint32_t i = 0; i < n_sta; i++)
@@ -249,56 +253,11 @@ int main (int argc, char *argv[])
       auto m = staDevice.Get(i);
       auto w = m->GetObject<WifiNetDevice>();
       auto v = DynamicCast<WifiPhy>(w->GetPhy());
-//      v->TraceConnectWithoutContext("PhyTxBegin",MakeCallback(&cb_tx_start));
-//      v->TraceConnectWithoutContext("PhyTxEnd",MakeCallback(&cb_tx_ended));
+      v->TraceConnectWithoutContext("PhyTxBegin",MakeCallback(&cb_tx_start));
+      v->TraceConnectWithoutContext("PhyTxEnd",MakeCallback(&cb_tx_ended));
     }
 
 
-  for (uint32_t j = 0; j < n_sta; j++) {
-      double max_gain = -std::numeric_limits<double>::infinity();
-      uint32_t max_i = 0;
-      for (uint32_t i = 0; i < n_ap; i++) {
-          double gain = lossModel->CalcRxPower(0, ap_nodes.Get(i)->GetObject<MobilityModel>(),
-                                               sta_nodes.Get(j)->GetObject<MobilityModel>());
-          if (gain >= max_gain) {
-              max_gain = gain;
-              max_i = i;
-          }
-      }
-      WifiTxVector txVector;
-      Ptr<PpvErrorRateModel> ppv = CreateObject<PpvErrorRateModel>();
-      auto table = S1gOfdmPhy::GetModulationLookupTable();
-      auto bandtable = S1gOfdmPhy::GetModulationBandLookupTable();
-      auto m = staDevice.Get(j);
-      auto w = m->GetObject<WifiNetDevice>();
-      auto v = DynamicCast<WifiPhy>(w->GetPhy());
-      uint16_t bw = v->GetChannelWidth();
-      double pw = v->GetTxPowerStart();
-      double nf = DbToRatio(20.);
-      std::string max_mode ("S1gOfdmRate0_30MbpsBW1MHz");
-      uint64_t max_rate = 0;
-      double BOLTZMANN = 1.3803e-23;
-      double Nt = BOLTZMANN * 290 * bw * 1e6;
-      double noiseFloor = nf * Nt;
-
-      for (auto it = bandtable.begin(); it != bandtable.end(); it++) {
-          if (it->second == bw) {
-              txVector.SetMode(it->first);
-              txVector.SetChannelWidth(bw);
-              double ps = ppv->GetChunkSuccessRate(WifiMode(it->first), txVector,
-                                                   std::pow(10.0, (pw + max_gain - RatioToDb(noiseFloor)) / 10.0),
-                                                   (packetSize + UDP_IP_WIFI_HEADER_SIZE) * 8);
-              uint64_t rate = S1gOfdmPhy::GetDataRate(it->first, bw);
-              if (rate >= max_rate and ps > (1.-1e-5)) {
-                  max_rate = rate;
-                  max_mode = it->first;
-              }
-          }
-      }
-      auto a = DynamicCast<StaWifiMac>(w->GetMac());
-      a->GetWifiRemoteStationManager()->SetAttribute("DataMode", StringValue (max_mode));
-      std::cout << "STA:" << j << "-" << "AP:" << max_i << ", Gain: " << max_gain << "\n\t\t noiseFloor:" << RatioToDb(noiseFloor) << " phyMode:" << max_mode << std::endl;
-  }
 
   PointToPointHelper p2p;
   p2p.SetDeviceAttribute ("DataRate", StringValue ("100Gbps"));
@@ -382,6 +341,7 @@ int main (int argc, char *argv[])
              auto B = sta_nodes.Get(j)->GetObject<MobilityModel>();
              double g = lossModel->CalcRxPower(0,B,A);
              gain_list.push_back (g);
+             std::cout<< "sta: " << j << " ap:" << i << " " << g << std::endl;
       }
       auto result = std::max_element(gain_list.begin(), gain_list.end());
       int ind = std::distance(gain_list.begin(), result);
@@ -407,8 +367,64 @@ int main (int argc, char *argv[])
       std::cout<< "STA: " << j << ", arp: " << addr << std::endl;
   }
 
+    for (int i = 0; i < n_ap; ++i) {
+      auto m = apDevice.Get(i);
+      auto w = m->GetObject<WifiNetDevice>();
+      auto v = w->GetMac();
+      v->TraceConnectWithoutContext("MacRx",MakeCallback(&cb_rx));
+    }
+    // setup sta mcs
+    for (uint32_t j = 0; j < n_sta; j++) {
+          double max_gain = -std::numeric_limits<double>::infinity();
+          uint32_t max_i = 0;
+          for (uint32_t i = 0; i < n_ap; i++) {
+              double gain = lossModel->CalcRxPower(0, ap_nodes.Get(i)->GetObject<MobilityModel>(),
+                                                   sta_nodes.Get(j)->GetObject<MobilityModel>());
+              if (gain >= max_gain) {
+                  max_gain = gain;
+                  max_i = i;
+              }
+          }
+          WifiTxVector txVector;
+          Ptr<PpvErrorRateModel> ppv = CreateObject<PpvErrorRateModel>();
+          auto table = S1gOfdmPhy::GetModulationLookupTable();
+          auto bandtable = S1gOfdmPhy::GetModulationBandLookupTable();
+          auto m = staDevice.Get(j);
+          auto w = m->GetObject<WifiNetDevice>();
+          auto v = DynamicCast<WifiPhy>(w->GetPhy());
+          uint16_t bw = v->GetChannelWidth();
+          double pw = v->GetTxPowerStart();
+          double nf = DbToRatio(20.);
+          std::string max_mode ("S1gOfdmRate0_30MbpsBW1MHz");
+          uint64_t max_rate = 0;
+          double BOLTZMANN = 1.3803e-23;
+          double Nt = BOLTZMANN * 290 * bw * 1e6;
+          double noiseFloor = nf * Nt;
+
+          for (auto it = bandtable.begin(); it != bandtable.end(); it++) {
+              if (it->second == bw) {
+                  txVector.SetMode(it->first);
+                  txVector.SetChannelWidth(bw);
+                  double ps = ppv->GetChunkSuccessRate(WifiMode(it->first), txVector,
+                                                       std::pow(10.0, (pw + max_gain - RatioToDb(noiseFloor)) / 10.0),
+                                                       (packetSize + UDP_IP_WIFI_HEADER_SIZE) * 8);
+                  uint64_t rate = S1gOfdmPhy::GetDataRate(it->first, bw);
+                  if (rate >= max_rate and ps > (1.-1e-5)) {
+                      max_rate = rate;
+                      max_mode = it->first;
+                  }
+              }
+          }
+          auto a = DynamicCast<StaWifiMac>(w->GetMac());
+          a->GetWifiRemoteStationManager()->SetAttribute("DataMode", StringValue (max_mode));
+          std::cout << "STA:" << j << "-" << "AP:" << max_i << ", Gain: " << max_gain << "\n\t\t noiseFloor:" << RatioToDb(noiseFloor) << " phyMode:" << max_mode << std::endl;
+      }
   Simulator::Stop (Seconds (time_for_test_end+0.1));
+  std::cout<< "Sim Start" << std::endl;
+
   Simulator::Run ();
+
+
   for (int i = 0; i < n_sta; ++i) {
     auto m = staDevice.Get(i);
     auto w = m->GetObject<WifiNetDevice>();

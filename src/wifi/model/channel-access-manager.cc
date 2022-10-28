@@ -299,6 +299,7 @@ ChannelAccessManager::RequestAccess (Ptr<Txop> txop)
       m_phy->NotifyChannelAccessRequested ();
     }
   //Deny access if in sleep mode or off
+    NS_LOG_UNCOND( "m_TWTSleeping" << (m_TWTSleeping ? "true" : "false"));
   if (m_sleeping || m_off || m_TWTSleeping)
     {
       return;
