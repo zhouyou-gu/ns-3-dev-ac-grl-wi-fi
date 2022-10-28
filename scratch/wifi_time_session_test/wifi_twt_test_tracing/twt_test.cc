@@ -406,7 +406,7 @@ int main (int argc, char *argv[])
                   txVector.SetMode(it->first);
                   txVector.SetChannelWidth(bw);
                   double ps = ppv->GetChunkSuccessRate(WifiMode(it->first), txVector,
-                                                       std::pow(10.0, (pw + max_gain - RatioToDb(noiseFloor)) / 10.0),
+                                                       std::pow(10.0, (pw + max_gain - WToDbm(noiseFloor)) / 10.0),
                                                        (packetSize + UDP_IP_WIFI_HEADER_SIZE) * 8);
                   uint64_t rate = S1gOfdmPhy::GetDataRate(it->first, bw);
                   if (rate >= max_rate and ps > (1.-1e-5)) {
@@ -417,7 +417,7 @@ int main (int argc, char *argv[])
           }
           auto a = DynamicCast<StaWifiMac>(w->GetMac());
           a->GetWifiRemoteStationManager()->SetAttribute("DataMode", StringValue (max_mode));
-          std::cout << "STA:" << j << "-" << "AP:" << max_i << ", Gain: " << max_gain << "\n\t\t noiseFloor:" << RatioToDb(noiseFloor) << " phyMode:" << max_mode << std::endl;
+          std::cout << "STA:" << j << "-" << "AP:" << max_i << ", Gain: " << max_gain << "\n\t\t noiseFloor:" << WToDbm(noiseFloor) << " phyMode:" << max_mode << std::endl;
       }
   Simulator::Stop (Seconds (time_for_test_end+0.1));
   std::cout<< "Sim Start" << std::endl;

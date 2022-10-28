@@ -349,7 +349,7 @@ InterferenceHelper::CalculateSnr (double signal, double noiseInterference, uint1
   double noise = noiseFloor + noiseInterference;
   double snr = signal / noise; //linear scale
   NS_LOG_DEBUG ("bandwidth(MHz)=" << channelWidth << ", signal(W)= " << signal << ", noise(W)=" << noiseFloor << ", interference(W)=" << noiseInterference << ", snr=" << RatioToDb(snr) << "dB");
-  NS_LOG_WARN ("bandwidth(MHz)=" << channelWidth << ", signal(dBm)= " << WToDbm(signal) << ", noise(dBm)=" << WToDbm(noiseFloor)  << ", interference(dBm)=" << WToDbm(noiseInterference) << ", snr=" << RatioToDb(snr) << "dB");
+  NS_LOG_WARN ("bandwidth(MHz)=" << channelWidth << ", signal(dBm)= " << WToDbm(signal) << ", noise(dBm)=" << WToDbm(noiseFloor)  << ", interference(dBm)=" << WToDbm(noiseInterference) << ", snr=" << RatioToDb(snr) << "dB" << ", noisefigure=" << RatioToDb(m_noiseFigure));
   if (m_errorRateModel->IsAwgn ())
     {
       double gain = 1;

@@ -77,7 +77,8 @@ int main (int argc, char *argv[])
   LogComponentEnableAll (LOG_PREFIX_TIME);
   LogComponentEnableAll (LOG_PREFIX_NODE);
   LogComponentEnable ("wifi-test", LOG_LEVEL_INFO);
-
+//  LogComponentEnable ("InterferenceHelper", ns3::LOG_LEVEL_WARN);
+//  LogComponentEnable ("ThresholdPreambleDetectionModel", ns3::LOG_LEVEL_ALL);
 
   std::string phyMode ("S1gOfdmRate0_30MbpsBW1MHz");
   uint32_t packetSize = 20; // bytes
@@ -210,19 +211,9 @@ int main (int argc, char *argv[])
         auto m = staDevice.Get(j);
         auto w = m->GetObject<WifiNetDevice>();
         auto v = DynamicCast<WifiPhy>(w->GetPhy());
-        v->SetTxPowerStart(10.);
-        v->SetTxPowerEnd(10.);
+        v->SetTxPowerStart(0.);
+        v->SetTxPowerEnd(0.);
     }
-  for (uint32_t i = 0; i < n_sta; i++)
-  {
-    auto m = staDevice.Get(i);
-    auto w = m->GetObject<WifiNetDevice>();
-    auto v = DynamicCast<StaWifiMac>(w->GetMac());
-    v->SetAttribute("twtstarttime", TimeValue(MicroSeconds(0.)));
-    v->SetAttribute("twtoffset", TimeValue(MicroSeconds(0.)));
-    v->SetAttribute("twtduration", TimeValue(MicroSeconds(0.)));
-    v->SetAttribute("twtperiodicity", TimeValue(MicroSeconds(0.)));
-  }
   if (verbose) {
       for (uint32_t i = 0; i < n_sta; i++) {
           auto m = staDevice.Get(i);
@@ -387,7 +378,7 @@ int main (int argc, char *argv[])
                   txVector.SetMode(it->first);
                   txVector.SetChannelWidth(bw);
                   double ps = ppv->GetChunkSuccessRate(WifiMode(it->first), txVector,
-                                                       std::pow(10.0, (pw + max_gain - RatioToDb(noiseFloor)) / 10.0),
+                                                       std::pow(10.0, (pw + max_gain - WToDbm(noiseFloor)) / 10.0),
                                                        (packetSize + UDP_IP_WIFI_HEADER_SIZE) * 8);
                   uint64_t rate = S1gOfdmPhy::GetDataRate(it->first, bw);
                   if (rate >= max_rate and ps > (1.-1e-5)) {
@@ -398,7 +389,7 @@ int main (int argc, char *argv[])
           }
           auto a = DynamicCast<StaWifiMac>(w->GetMac());
           a->GetWifiRemoteStationManager()->SetAttribute("DataMode", StringValue (max_mode));
-          std::cout << "STA:" << j << "-" << "AP:" << max_i << ", Gain: " << max_gain << "\n\t\t noiseFloor:" << RatioToDb(noiseFloor) << " phyMode:" << max_mode << std::endl;
+          std::cout << "STA:" << j << "-" << "AP:" << max_i << ", Gain: " << max_gain << "\n\t\t noiseFloor:" << WToDbm(noiseFloor) << " phyMode:" << max_mode << std::endl;
       }
   Simulator::Stop (Seconds (time_for_test_end+0.1));
   std::cout<< "Sim Start" << std::endl;
