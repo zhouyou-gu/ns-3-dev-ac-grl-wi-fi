@@ -38,7 +38,7 @@ ThresholdPreambleDetectionModel::GetTypeId (void)
     .AddConstructor<ThresholdPreambleDetectionModel> ()
     .AddAttribute ("Threshold",
                    "Preamble is successfully detection if the SNR is at or above this value (expressed in dB).",
-                   DoubleValue (4),
+                   DoubleValue (0.),
                    MakeDoubleAccessor (&ThresholdPreambleDetectionModel::m_threshold),
                    MakeDoubleChecker<double> ())
     .AddAttribute ("MinimumRssi",
@@ -72,7 +72,7 @@ ThresholdPreambleDetectionModel::IsPreambleDetected (double rssi, double snr, do
         }
       else
         {
-          NS_LOG_DEBUG ("Received RSSI is above the target RSSI but SNR is too low");
+          NS_LOG_DEBUG("Received RSSI is above the target RSSI but SNR is too low " << RatioToDb (snr) << " " << WToDbm (rssi));
           return false;
         }
     }
