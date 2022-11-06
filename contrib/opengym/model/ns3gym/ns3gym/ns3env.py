@@ -39,14 +39,10 @@ class Ns3ZmqBridge(object):
         context = zmq.Context()
         self.socket = context.socket(zmq.REP)
         try:
-            if port == 0 and self.startSim:
+            if port == 0:
                 port = self.socket.bind_to_random_port('tcp://*', min_port=5001, max_port=10000, max_tries=100)
-                print("Got new port for ns3gm interface: ", port)
-
-            elif port == 0 and not self.startSim:
-                print("Cannot use port %s to bind" % str(port) )
-                print("Please specify correct port" )
-                sys.exit()
+                # print("Got new port for ns3gm interface: ", port)
+                self.port = port
 
             else:
                 self.socket.bind ("tcp://*:%s" % str(port))
@@ -378,6 +374,12 @@ class Ns3Env(gym.Env):
         self.steps_beyond_done = None
 
         self.ns3ZmqBridge = Ns3ZmqBridge(self.port, self.startSim, self.simSeed, self.simArgs, self.debug)
+        self.has_initialized = False
+
+    def init(self):
+        if self.has_initialized:
+            print("this agt has been initialized before, use reset to reset it")
+            return
         self.ns3ZmqBridge.initialize_env(self.stepTime)
         self.action_space = self.ns3ZmqBridge.get_action_space()
         self.observation_space = self.ns3ZmqBridge.get_observation_space()
@@ -385,6 +387,8 @@ class Ns3Env(gym.Env):
         self.ns3ZmqBridge.rx_env_state()
         self.envDirty = False
         self.seed()
+
+        self.has_initialized = True
 
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
@@ -427,6 +431,11 @@ class Ns3Env(gym.Env):
     def get_random_action(self):
         act = self.action_space.sample()
         return act
+
+    def get_port(self):
+        if self.ns3ZmqBridge:
+            return self.ns3ZmqBridge.port
+        return self.port
 
     def close(self):
         if self.ns3ZmqBridge:
