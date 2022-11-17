@@ -213,6 +213,8 @@ int main (int argc, char *argv[])
         auto v = DynamicCast<WifiPhy>(w->GetPhy());
         v->SetTxPowerStart(0.);
         v->SetTxPowerEnd(0.);
+        auto z = DynamicCast<StaWifiMac>(w->GetMac());
+        z->GetTxop()->GetWifiMacQueue()->SetMaxSize(QueueSize("5p"));
     }
   if (verbose) {
       for (uint32_t i = 0; i < n_sta; i++) {
