@@ -42,10 +42,10 @@ void cb(Ptr<const Packet> p){
 
 
 void cb_asso(uint16_t /* AID */ a, Mac48Address b){
-  NS_LOG_UNCOND("AssociatedSta:" << a << ":" << b  <<  " time:" << (Simulator::Now()- Seconds(10)).GetMilliSeconds() );
+  NS_LOG_UNCOND("AssociatedSta:" << a << ":" << b  <<  " time:" << (Simulator::Now()).GetMilliSeconds() );
 }
 void cb_deasso(uint16_t /* AID */ a, Mac48Address b){
-  NS_LOG_UNCOND("DeassociatedSta:" << a << ":" << b  <<  " time:" << (Simulator::Now()- Seconds(10)).GetMilliSeconds() );
+  NS_LOG_UNCOND("DeassociatedSta:" << a << ":" << b  <<  " time:" << (Simulator::Now()).GetMilliSeconds() );
 }
 void cb_tx_start(Ptr<const Packet> packet, double power){
     WifiMacHeader head;
@@ -53,7 +53,7 @@ void cb_tx_start(Ptr<const Packet> packet, double power){
     Mac48Address src = head.GetAddr2 ();
     if (head.GetType () == WIFI_MAC_DATA)
       {
-          NS_LOG_UNCOND("cb_tx_start:" << (Simulator::Now()- Seconds(10)).GetMicroSeconds() << "," << head.GetAddr2 () << "," << head.GetAddr1 ());
+          NS_LOG_UNCOND("cb_tx_start:" << (Simulator::Now()).GetMicroSeconds() << "," << head.GetAddr2 () << "," << head.GetAddr1 () <<"," << packet->GetSize() << "," << head.GetSequenceNumber());
       }
 }
 void cb_tx_ended(Ptr<const Packet> packet){
@@ -61,7 +61,7 @@ void cb_tx_ended(Ptr<const Packet> packet){
     packet->PeekHeader (head);
     if (head.GetType () == WIFI_MAC_DATA)
       {
-          NS_LOG_UNCOND("cb_tx_end:" << (Simulator::Now()- Seconds(10)).GetMicroSeconds() << "," << head.GetAddr2 () << "," << head.GetAddr1 ());
+          NS_LOG_UNCOND("cb_tx_end:" << (Simulator::Now()).GetMicroSeconds() << "," << head.GetAddr2 () << "," << head.GetAddr1 ()<<"," << packet->GetSize() << "," << head.GetSequenceNumber());
       }
 }
 void cb_rx(Ptr<const Packet> packet){
@@ -69,7 +69,7 @@ void cb_rx(Ptr<const Packet> packet){
     packet->PeekHeader (head);
     if (head.IsQosData() or head.IsData())
       {
-          NS_LOG_UNCOND("cb_rx:" << (Simulator::Now()- Seconds(10)).GetMilliSeconds() << "," << head.GetAddr2 () << "," << head.GetAddr1 ());
+          NS_LOG_UNCOND("cb_rx:" << (Simulator::Now()).GetMilliSeconds() << "," << head.GetAddr2 () << "," << head.GetAddr1 ()<<"," << packet->GetSize());
       }
 }
 int main (int argc, char *argv[])
@@ -93,9 +93,9 @@ int main (int argc, char *argv[])
   int simTime = 10;
 
   int time_for_arp_start = 1;
-  int time_for_arp_end = 5;
+  int time_for_arp_end = 2;
 
-  int time_for_test_start = 10;
+  int time_for_test_start = 2;
 
   bool verbose = false;
 

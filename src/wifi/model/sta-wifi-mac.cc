@@ -1219,6 +1219,7 @@ StaWifiMac::StartTWT(void) {
     NS_LOG_FUNCTION (this);
     if(m_twtduration.IsStrictlyPositive()){
 //        NS_LOG_UNCOND("start twt");
+        Simulator::Schedule(m_twtstarttime-Seconds(0.1),&WifiMac::NotifyTWTSleep,this);
         Simulator::Schedule(m_twtstarttime,&StaWifiMac::ScheduleTWT,this);
     }
 }
