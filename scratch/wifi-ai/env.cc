@@ -83,14 +83,14 @@ int main (int argc, char *argv[])
   std::string phyMode ("S1gOfdmRate0_30MbpsBW1MHz");
   uint32_t packetSize = 20; // bytes
   uint32_t numPackets = 100000;
-  uint32_t interval_in_us = 1000000;
+  uint32_t interval_in_us = 20000;
 
   int n_ap = 4;
-  int n_sta = 1;
+  int n_sta = 20;
 
-  uint32_t simSeed = 101;
+  uint32_t simSeed = 1000;
   uint32_t openGymPort = 5000;
-  int simTime = 10;
+  int simTime = 5;
 
   int time_for_arp_start = 1;
   int time_for_arp_end = 2;
@@ -198,12 +198,16 @@ int main (int argc, char *argv[])
         v->SetBeaconOffset(i * (v->GetBeaconInterval() / n_ap));
         std::cout << "AP: " << i << " BeaconOffset:" << v->GetBeaconOffset() << std::endl;
         v->GetTxop()->GetWifiMacQueue()->SetMaxSize(QueueSize("500p"));
+        Simulator::Schedule (Seconds (time_for_test_start), &ApWifiMac::SetBeaconGeneration, v , false);
   }
 
   // setup sta
   wifiMac.SetType ("ns3::StaWifiMac",
                    "Ssid", SsidValue (ssid),
-                   "QosSupported", BooleanValue (false)
+                   "QosSupported", BooleanValue (false),
+                   "WaitBeaconTimeout", TimeValue (MilliSeconds (200)),
+                   "AssocRequestTimeout", TimeValue (MilliSeconds (100)),
+                   "MaxMissedBeacons", UintegerValue (100000)
   );
   NetDeviceContainer staDevice = wifi.Install (wifiPhy, wifiMac, sta_nodes);
   // setup sta tx power
@@ -235,6 +239,7 @@ int main (int argc, char *argv[])
           v->TraceConnectWithoutContext("DeAssociatedSta", MakeCallback(&cb_deasso));
       }
   }
+
   myGymEnv->m_staDevices.Add(staDevice);
 
   PointToPointHelper p2p;

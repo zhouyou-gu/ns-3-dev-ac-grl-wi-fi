@@ -220,12 +220,16 @@ int main (int argc, char *argv[])
         v->SetBeaconOffset(i * (v->GetBeaconInterval() / n_ap));
         std::cout << "AP: " << i << " BeaconOffset:" << v->GetBeaconOffset() << std::endl;
         v->GetTxop()->GetWifiMacQueue()->SetMaxSize(QueueSize("500p"));
+        Simulator::Schedule (Seconds (time_for_test_start), &ApWifiMac::SetBeaconGeneration, v , false);
   }
 
   // setup sta
   wifiMac.SetType ("ns3::StaWifiMac",
                    "Ssid", SsidValue (ssid),
-                   "QosSupported", BooleanValue (false)
+                   "QosSupported", BooleanValue (false),
+                   "WaitBeaconTimeout", TimeValue (MilliSeconds (200)),
+                   "AssocRequestTimeout", TimeValue (MilliSeconds (100)),
+                   "MaxMissedBeacons", UintegerValue (100000)
   );
   NetDeviceContainer staDevice = wifi.Install (wifiPhy, wifiMac, sta_nodes);
   // setup sta tx power

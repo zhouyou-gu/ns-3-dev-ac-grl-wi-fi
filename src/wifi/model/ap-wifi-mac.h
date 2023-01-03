@@ -68,6 +68,12 @@ public:
   Ptr<WifiMacQueue> GetTxopQueue (AcIndex ac) const override;
 
   /**
+   * Enable or disable beacon generation of the AP.
+   *
+   * \param enable enable or disable beacon generation
+   */
+  void SetBeaconGeneration (bool enable);
+  /**
    * \param interval the interval between two beacon transmissions.
    */
   void SetBeaconInterval (Time interval);
@@ -265,12 +271,6 @@ private:
    * \return the DSSS Parameter Set that we support
    */
   DsssParameterSet GetDsssParameterSet (void) const;
-  /**
-   * Enable or disable beacon generation of the AP.
-   *
-   * \param enable enable or disable beacon generation
-   */
-  void SetBeaconGeneration (bool enable);
 
   /**
    * Update whether short slot time should be enabled or not in the BSS.

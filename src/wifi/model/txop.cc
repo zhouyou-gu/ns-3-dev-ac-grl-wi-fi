@@ -52,7 +52,7 @@ Txop::GetTypeId (void)
                                          &Txop::GetMinCw),
                    MakeUintegerChecker<uint32_t> ())
     .AddAttribute ("MaxCw", "The maximum value of the contention window.",
-                   UintegerValue (1023),
+                   UintegerValue (127),
                    MakeUintegerAccessor (&Txop::SetMaxCw,
                                          &Txop::GetMaxCw),
                    MakeUintegerChecker<uint32_t> ())

@@ -684,7 +684,9 @@ WifiMac::ConfigurePhyDependentParameters (void)
       cwmin = 15;
       cwmax = 1023;
     }
-
+    if (standard==WIFI_STANDARD_80211ah){
+        return;
+    }
   ConfigureContentionWindow (cwmin, cwmax);
 }
 
