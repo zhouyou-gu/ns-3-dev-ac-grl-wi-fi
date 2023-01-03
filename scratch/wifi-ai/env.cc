@@ -42,10 +42,10 @@ void cb(Ptr<const Packet> p){
 
 
 void cb_asso(uint16_t /* AID */ a, Mac48Address b){
-  NS_LOG_UNCOND("AssociatedSta:" << a << ":" << b  <<  " time:" << (Simulator::Now()).GetMilliSeconds() );
+  NS_LOG_UNCOND("AssociatedSta:" << a << ":" << b  <<  " time:" << (Simulator::Now()).GetMicroSeconds() );
 }
 void cb_deasso(uint16_t /* AID */ a, Mac48Address b){
-  NS_LOG_UNCOND("DeassociatedSta:" << a << ":" << b  <<  " time:" << (Simulator::Now()).GetMilliSeconds() );
+  NS_LOG_UNCOND("DeassociatedSta:" << a << ":" << b  <<  " time:" << (Simulator::Now()).GetMicroSeconds() );
 }
 void cb_tx_start(Ptr<const Packet> packet, double power){
     WifiMacHeader head;
@@ -95,7 +95,7 @@ int main (int argc, char *argv[])
   int time_for_arp_start = 1;
   int time_for_arp_end = 2;
 
-  int time_for_test_start = 2;
+  double time_for_test_start = 2 - 0.01;
 
   bool verbose = false;
 
@@ -112,7 +112,7 @@ int main (int argc, char *argv[])
   cmd.Parse (argc, argv);
   RngSeedManager::SetSeed (1);
   RngSeedManager::SetRun(simSeed);
-  int time_for_test_end = time_for_test_start + simTime;
+  double time_for_test_end = time_for_test_start + simTime + 0.01;
   Time interval = MicroSeconds(interval_in_us);
 
   std::cout << "packetSize:" << packetSize << std::endl;
@@ -216,6 +216,7 @@ int main (int argc, char *argv[])
         auto z = DynamicCast<StaWifiMac>(w->GetMac());
         z->GetTxop()->GetWifiMacQueue()->SetMaxSize(QueueSize("5p"));
     }
+
   if (verbose) {
       for (uint32_t i = 0; i < n_sta; i++) {
           auto m = staDevice.Get(i);

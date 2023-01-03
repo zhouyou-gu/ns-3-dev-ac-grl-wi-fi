@@ -25,6 +25,9 @@
 #include "ns3/s1g-ofdm-phy.h"
 #include "ns3/ppv-error-rate-model.h"
 
+
+#include <chrono>
+
 #define UDP_IP_WIFI_HEADER_SIZE 64
 
 using namespace ns3;
@@ -41,10 +44,12 @@ void cb(Ptr<const Packet> p){
 
 
 void cb_asso(uint16_t /* AID */ a, Mac48Address b){
-  NS_LOG_UNCOND("AssociatedSta:" << a << ":" << b  <<  " time:" << (Simulator::Now()- Seconds(10)).GetMilliSeconds() );
+  NS_LOG_UNCOND("AssociatedSta:" << a << ":" << b  <<  " time:" << (Simulator::Now()).GetMicroSeconds() );
+  std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+  NS_LOG_UNCOND("sim start:" << std::chrono::time_point_cast<std::chrono::microseconds>( begin).time_since_epoch().count());
 }
 void cb_deasso(uint16_t /* AID */ a, Mac48Address b){
-  NS_LOG_UNCOND("DeassociatedSta:" << a << ":" << b  <<  " time:" << (Simulator::Now()- Seconds(10)).GetMilliSeconds() );
+  NS_LOG_UNCOND("DeassociatedSta:" << a << ":" << b  <<  " time:" << (Simulator::Now()).GetMicroSeconds() );
 }
 void cb_tx_start(Ptr<const Packet> packet, double power){
     WifiMacHeader head;
@@ -52,31 +57,29 @@ void cb_tx_start(Ptr<const Packet> packet, double power){
     Mac48Address src = head.GetAddr2 ();
     if (head.GetType () == WIFI_MAC_DATA)
       {
-          NS_LOG_UNCOND("cb_tx_start");
-          std::cout<< "tx_start:" << (Simulator::Now()- Seconds(10)).GetMilliSeconds() << ":" << src <<std::endl;
+          NS_LOG_UNCOND("cb_tx_start:" << (Simulator::Now()).GetMicroSeconds() << "," << head.GetAddr2 () << "," << head.GetAddr1 () <<"," << packet->GetSize() << "," << head.GetSequenceNumber());
       }
 }
 void cb_tx_ended(Ptr<const Packet> packet){
     WifiMacHeader head;
     packet->PeekHeader (head);
-    Mac48Address src = head.GetAddr2 ();
     if (head.GetType () == WIFI_MAC_DATA)
       {
-          NS_LOG_UNCOND("cb_tx_ended");
-          std::cout<< "tx_ended:" << (Simulator::Now()- Seconds(10)).GetMilliSeconds() << ":" << src <<std::endl;
+          NS_LOG_UNCOND("cb_tx_end:" << (Simulator::Now()).GetMicroSeconds() << "," << head.GetAddr2 () << "," << head.GetAddr1 ()<<"," << packet->GetSize() << "," << head.GetSequenceNumber());
       }
 }
 void cb_rx(Ptr<const Packet> packet){
     WifiMacHeader head;
     packet->PeekHeader (head);
-    Mac48Address src = head.GetAddr2 ();
     if (head.IsQosData() or head.IsData())
       {
-          NS_LOG_UNCOND("cb_rx" << (Simulator::Now()- Seconds(10)).GetMilliSeconds() << ":" << src );
+          NS_LOG_UNCOND("cb_rx:" << (Simulator::Now()).GetMilliSeconds() << "," << head.GetAddr2 () << "," << head.GetAddr1 ()<<"," << packet->GetSize());
       }
 }
 int main (int argc, char *argv[])
 {
+  std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+  NS_LOG_UNCOND("sim start:" << std::chrono::time_point_cast<std::chrono::microseconds>( begin).time_since_epoch().count());
   LogComponentEnableAll (LOG_PREFIX_TIME);
   LogComponentEnableAll (LOG_PREFIX_NODE);
   LogComponentEnable ("wifi-test", LOG_LEVEL_INFO);
@@ -85,21 +88,21 @@ int main (int argc, char *argv[])
   std::string phyMode ("S1gOfdmRate0_30MbpsBW1MHz");
   uint32_t packetSize = 20; // bytes
   uint32_t numPackets = 100000;
-  uint32_t interval_in_us = 1000000;
+  uint32_t interval_in_us = 20000;
 
   int n_ap = 4;
-  int n_sta = 1;
+  int n_sta = 20;
 
   uint32_t simSeed = 1000;
   uint32_t openGymPort = 5000;
-  int simTime = 10;
+  int simTime = 5;
 
   int time_for_arp_start = 1;
-  int time_for_arp_end = 5;
+  int time_for_arp_end = 2;
 
-  int time_for_test_start = 10;
+  double time_for_test_start = 2 - 0.01;
 
-  bool verbose = true;
+  bool verbose = false;
 
   CommandLine cmd (__FILE__);
   cmd.AddValue ("phyMode", "Wifi Phy mode", phyMode);
@@ -114,7 +117,7 @@ int main (int argc, char *argv[])
   cmd.Parse (argc, argv);
   RngSeedManager::SetSeed (1);
   RngSeedManager::SetRun(simSeed);
-  int time_for_test_end = time_for_test_start + simTime;
+  double time_for_test_end = time_for_test_start + simTime + 0.01;
   Time interval = MicroSeconds(interval_in_us);
 
   std::cout << "packetSize:" << packetSize << std::endl;
@@ -122,7 +125,7 @@ int main (int argc, char *argv[])
   std::cout << "interval_in_us:" << interval_in_us << std::endl;
   std::cout << "n_ap:" << n_ap << std::endl;
   std::cout << "n_sta:" << n_sta << std::endl;
-  std::cout << "simSeed:" << interval_in_us << std::endl;
+  std::cout << "simSeed:" << simSeed << std::endl;
   std::cout << "simTime:" << simTime << std::endl;
 
   // Fix non-unicast data rate to be the same as that of unicast
@@ -210,17 +213,13 @@ int main (int argc, char *argv[])
                    "QosSupported", BooleanValue (false)
   );
   NetDeviceContainer apDevice = wifi.Install (wifiPhy, wifiMac, ap_nodes);
-  for (uint32_t i = 0; i < n_ap; i++)
-  {
-    auto m = apDevice.Get(i);
-    auto w = m->GetObject<WifiNetDevice>();
-    auto v = DynamicCast<ApWifiMac>(w->GetMac());
-    v->SetBeaconOffset(i* (v->GetBeaconInterval()/n_ap) );
-    std::cout<< "AP: "<< i <<" BeaconOffset:" << v->GetBeaconOffset() << std::endl;
-    v->TraceConnectWithoutContext("MacRxDrop",MakeCallback(&cb));
-    v->TraceConnectWithoutContext("AssociatedSta",MakeCallback(&cb_asso));
-    v->TraceConnectWithoutContext("DeAssociatedSta",MakeCallback(&cb_deasso));
-    v->GetTxop()->GetWifiMacQueue()->SetMaxSize (QueueSize ("500p"));
+  for (uint32_t i = 0; i < n_ap; i++) {
+        auto m = apDevice.Get(i);
+        auto w = m->GetObject<WifiNetDevice>();
+        auto v = DynamicCast<ApWifiMac>(w->GetMac());
+        v->SetBeaconOffset(i * (v->GetBeaconInterval() / n_ap));
+        std::cout << "AP: " << i << " BeaconOffset:" << v->GetBeaconOffset() << std::endl;
+        v->GetTxop()->GetWifiMacQueue()->SetMaxSize(QueueSize("500p"));
   }
 
   // setup sta
@@ -234,27 +233,41 @@ int main (int argc, char *argv[])
         auto m = staDevice.Get(j);
         auto w = m->GetObject<WifiNetDevice>();
         auto v = DynamicCast<WifiPhy>(w->GetPhy());
-        v->SetTxPowerStart(10.);
-        v->SetTxPowerEnd(10.);
+        v->SetTxPowerStart(0.);
+        v->SetTxPowerEnd(0.);
+        auto z = DynamicCast<StaWifiMac>(w->GetMac());
+        z->GetTxop()->GetWifiMacQueue()->SetMaxSize(QueueSize("5p"));
     }
   for (uint32_t i = 0; i < n_sta; i++)
   {
     auto m = staDevice.Get(i);
     auto w = m->GetObject<WifiNetDevice>();
     auto v = DynamicCast<StaWifiMac>(w->GetMac());
-    v->SetAttribute("twtstarttime", TimeValue(MicroSeconds(0.)));
-    v->SetAttribute("twtoffset", TimeValue(MicroSeconds(0.)));
-    v->SetAttribute("twtduration", TimeValue(MicroSeconds(0.)));
-    v->SetAttribute("twtperiodicity", TimeValue(MicroSeconds(100000)));
+    v->SetAttribute("twtstarttime", TimeValue(MicroSeconds(2000000)));
+    v->SetAttribute("twtoffset", TimeValue(MicroSeconds((i%4)*10000)));
+    v->SetAttribute("twtduration", TimeValue(MicroSeconds(10000)));
+    v->SetAttribute("twtperiodicity", TimeValue(MicroSeconds(40000)));
   }
 
-  for (uint32_t i = 0; i < n_sta; i++)
-    {
-      auto m = staDevice.Get(i);
-      auto w = m->GetObject<WifiNetDevice>();
-      auto v = DynamicCast<WifiPhy>(w->GetPhy());
-      v->TraceConnectWithoutContext("PhyTxBegin",MakeCallback(&cb_tx_start));
-      v->TraceConnectWithoutContext("PhyTxEnd",MakeCallback(&cb_tx_ended));
+
+
+    if (verbose) {
+        for (uint32_t i = 0; i < n_sta; i++) {
+            auto m = staDevice.Get(i);
+            auto w = m->GetObject<WifiNetDevice>();
+            auto v = DynamicCast<WifiPhy>(w->GetPhy());
+            v->TraceConnectWithoutContext("PhyTxBegin", MakeCallback(&cb_tx_start));
+            v->TraceConnectWithoutContext("PhyTxEnd", MakeCallback(&cb_tx_ended));
+        }
+        for (int i = 0; i < n_ap; ++i) {
+            auto m = apDevice.Get(i);
+            auto w = m->GetObject<WifiNetDevice>();
+            auto v = w->GetMac();
+            v->TraceConnectWithoutContext("MacRx", MakeCallback(&cb_rx));
+            v->TraceConnectWithoutContext("MacRxDrop", MakeCallback(&cb));
+            v->TraceConnectWithoutContext("AssociatedSta", MakeCallback(&cb_asso));
+            v->TraceConnectWithoutContext("DeAssociatedSta", MakeCallback(&cb_deasso));
+        }
     }
 
 
@@ -367,12 +380,6 @@ int main (int argc, char *argv[])
       std::cout<< "STA: " << j << ", arp: " << addr << std::endl;
   }
 
-    for (int i = 0; i < n_ap; ++i) {
-      auto m = apDevice.Get(i);
-      auto w = m->GetObject<WifiNetDevice>();
-      auto v = w->GetMac();
-      v->TraceConnectWithoutContext("MacRx",MakeCallback(&cb_rx));
-    }
     // setup sta mcs
     for (uint32_t j = 0; j < n_sta; j++) {
           double max_gain = -std::numeric_limits<double>::infinity();
@@ -496,6 +503,7 @@ int main (int argc, char *argv[])
         }
     }
   Simulator::Destroy ();
-
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+    NS_LOG_UNCOND("sim start:" << std::chrono::time_point_cast<std::chrono::microseconds>( end).time_since_epoch().count());
   return 0;
 }
