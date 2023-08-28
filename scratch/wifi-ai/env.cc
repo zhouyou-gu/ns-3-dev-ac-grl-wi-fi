@@ -117,7 +117,7 @@ int main (int argc, char *argv[])
   RngSeedManager::SetSeed (1);
   RngSeedManager::SetRun(simSeed);
 
-  double time_for_test_start = (double) n_sta / 10 - 0.01;
+  double time_for_test_start = (double) n_sta / 10 + 10 - 0.01;
   double time_for_test_end = time_for_test_start + simTime + 0.01;
   Time interval = MicroSeconds(interval_in_us);
 
@@ -213,7 +213,7 @@ int main (int argc, char *argv[])
                    "Ssid", SsidValue (ssid),
                    "QosSupported", BooleanValue (false),
                    "WaitBeaconTimeout", TimeValue (MilliSeconds (200)),
-                   "AssocRequestTimeout", TimeValue (MilliSeconds (100)),
+                   "AssocRequestTimeout", TimeValue (MilliSeconds (200)),
                    "MaxMissedBeacons", UintegerValue (100000)
   );
   NetDeviceContainer staDevice = wifi.Install (wifiPhy, wifiMac, sta_nodes);
