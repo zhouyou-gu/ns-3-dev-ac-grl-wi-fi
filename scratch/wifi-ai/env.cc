@@ -32,14 +32,26 @@ using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("wifi-test");
 
-int dc = 0;
+void cb_rx_drop(Ptr<const Packet> packet){
+  LlcSnapHeader llc;
+  auto copy = packet->Copy();
+  copy->RemoveHeader (llc);
+  Ipv4Header head;
+  copy->PeekHeader (head);
 
-void cb(Ptr<const Packet> p){
-  p->PrintPacketTags (std::cout);
-  std::cout<< dc <<std::endl;
-  dc ++;
+  NS_LOG_UNCOND("cb_rx_drop:" << (Simulator::Now()).GetMicroSeconds() << "," << head.GetSource() << "," << head.GetDestination()<<"," << packet->GetSize());
+
 }
+void cb_rx_succ(Ptr<const Packet> packet){
+  LlcSnapHeader llc;
+  auto copy = packet->Copy();
+  copy->RemoveHeader (llc);
+  Ipv4Header head;
+  copy->PeekHeader (head);
 
+  NS_LOG_UNCOND("cb_rx_succ:" << (Simulator::Now()).GetMicroSeconds() << "," << head.GetSource() << "," << head.GetDestination()<<"," << packet->GetSize());
+
+}
 
 void cb_asso(uint16_t /* AID */ a, Mac48Address b){
   NS_LOG_UNCOND("AssociatedSta:" << a << ":" << b  <<  " time:" << (Simulator::Now()).GetMicroSeconds() );
@@ -64,14 +76,7 @@ void cb_tx_ended(Ptr<const Packet> packet){
           NS_LOG_UNCOND("cb_tx_end:" << (Simulator::Now()).GetMicroSeconds() << "," << head.GetAddr2 () << "," << head.GetAddr1 ()<<"," << packet->GetSize() << "," << head.GetSequenceNumber());
       }
 }
-void cb_rx(Ptr<const Packet> packet){
-    WifiMacHeader head;
-    packet->PeekHeader (head);
-    if (head.IsQosData() or head.IsData())
-      {
-          NS_LOG_UNCOND("cb_rx:" << (Simulator::Now()).GetMilliSeconds() << "," << head.GetAddr2 () << "," << head.GetAddr1 ()<<"," << packet->GetSize());
-      }
-}
+
 int main (int argc, char *argv[])
 {
   LogComponentEnableAll (LOG_PREFIX_TIME);
@@ -223,24 +228,24 @@ int main (int argc, char *argv[])
         z->GetTxop()->GetWifiMacQueue()->SetMaxSize(QueueSize("5p"));
     }
 
-  if (verbose) {
-      for (uint32_t i = 0; i < n_sta; i++) {
-          auto m = staDevice.Get(i);
-          auto w = m->GetObject<WifiNetDevice>();
-          auto v = DynamicCast<WifiPhy>(w->GetPhy());
-          v->TraceConnectWithoutContext("PhyTxBegin", MakeCallback(&cb_tx_start));
-          v->TraceConnectWithoutContext("PhyTxEnd", MakeCallback(&cb_tx_ended));
-      }
-      for (int i = 0; i < n_ap; ++i) {
-          auto m = apDevice.Get(i);
-          auto w = m->GetObject<WifiNetDevice>();
-          auto v = w->GetMac();
-          v->TraceConnectWithoutContext("MacRx", MakeCallback(&cb_rx));
-          v->TraceConnectWithoutContext("MacRxDrop", MakeCallback(&cb));
-          v->TraceConnectWithoutContext("AssociatedSta", MakeCallback(&cb_asso));
-          v->TraceConnectWithoutContext("DeAssociatedSta", MakeCallback(&cb_deasso));
-      }
-  }
+    if (verbose) {
+        for (uint32_t i = 0; i < n_sta; i++) {
+            auto m = staDevice.Get(i);
+            auto w = m->GetObject<WifiNetDevice>();
+            auto v = DynamicCast<WifiPhy>(w->GetPhy());
+            v->TraceConnectWithoutContext("PhyTxBegin", MakeCallback(&cb_tx_start));
+            v->TraceConnectWithoutContext("PhyTxEnd", MakeCallback(&cb_tx_ended));
+        }
+        for (int i = 0; i < n_ap; ++i) {
+            auto m = apDevice.Get(i);
+            auto w = m->GetObject<WifiNetDevice>();
+            auto v = w->GetMac();
+            v->TraceConnectWithoutContext("MacRx", MakeCallback(&cb_rx_succ));
+            v->TraceConnectWithoutContext("MacRxDrop", MakeCallback(&cb_rx_drop));
+            v->TraceConnectWithoutContext("AssociatedSta", MakeCallback(&cb_asso));
+            v->TraceConnectWithoutContext("DeAssociatedSta", MakeCallback(&cb_deasso));
+        }
+    }
 
   myGymEnv->m_staDevices.Add(staDevice);
 
