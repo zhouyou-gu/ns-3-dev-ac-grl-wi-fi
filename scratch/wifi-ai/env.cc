@@ -117,7 +117,7 @@ int main (int argc, char *argv[])
   RngSeedManager::SetSeed (1);
   RngSeedManager::SetRun(simSeed);
 
-  double time_for_test_start = (double) n_sta / 10 + 10 - 0.01;
+  double time_for_test_start = (double) n_sta * 0.5 + 10 - 0.01;
   double time_for_test_end = time_for_test_start + simTime + 0.01;
   Time interval = MicroSeconds(interval_in_us);
 
@@ -226,6 +226,7 @@ int main (int argc, char *argv[])
         v->SetTxPowerEnd(0.);
         auto z = DynamicCast<StaWifiMac>(w->GetMac());
         z->GetTxop()->GetWifiMacQueue()->SetMaxSize(QueueSize("5p"));
+        z->SetAttribute ("scanningstartoffset", TimeValue (MilliSeconds(500)* (j+1)));
     }
 
     if (verbose) {

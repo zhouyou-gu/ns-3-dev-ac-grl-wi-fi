@@ -92,6 +92,11 @@ StaWifiMac::GetTypeId (void)
                    TimeValue (MilliSeconds (0)),
                    MakeTimeAccessor (&StaWifiMac::m_twtperiodicity),
                                       MakeTimeChecker ())
+    .AddAttribute ("scanningstartoffset",
+                 "scanningstartoffset",
+                TimeValue (MilliSeconds (0)),
+                MakeTimeAccessor (&StaWifiMac::m_scanningstartoffset),
+                                   MakeTimeChecker ())
     .AddTraceSource ("Assoc", "Associated with an access point.",
                      MakeTraceSourceAccessor (&StaWifiMac::m_assocLogger),
                      "ns3::Mac48Address::TracedCallback")
@@ -125,7 +130,7 @@ void
 StaWifiMac::DoInitialize (void)
 {
   NS_LOG_FUNCTION (this);
-  StartScanning ();
+  Simulator::Schedule (m_scanningstartoffset,&StaWifiMac::StartScanning, this);
   StartTWT ();
 
 }

@@ -97,7 +97,7 @@ int main (int argc, char *argv[])
   uint32_t interval_in_us = 20000;
 
   int n_ap = 4;
-  int n_sta = 20;
+  int n_sta = 40;
 
   uint32_t simSeed = 1000;
   uint32_t openGymPort = 5000;
@@ -123,7 +123,7 @@ int main (int argc, char *argv[])
   RngSeedManager::SetSeed (6);
   RngSeedManager::SetRun(simSeed);
 
-  double twt_start_time = (double) n_sta / 10 + 10;
+  double twt_start_time = (double) n_sta * 0.5 + 10;
   double time_for_test_start = twt_start_time - 0.01;
   double time_for_test_end = time_for_test_start + simTime + 0.01;
   Time interval = MicroSeconds(interval_in_us);
@@ -247,6 +247,7 @@ int main (int argc, char *argv[])
         v->SetTxPowerEnd(0.);
         auto z = DynamicCast<StaWifiMac>(w->GetMac());
         z->GetTxop()->GetWifiMacQueue()->SetMaxSize(QueueSize("5p"));
+        z->SetAttribute ("scanningstartoffset", TimeValue (MilliSeconds(500)* (j+1)));
     }
   for (uint32_t i = 0; i < n_sta; i++)
   {

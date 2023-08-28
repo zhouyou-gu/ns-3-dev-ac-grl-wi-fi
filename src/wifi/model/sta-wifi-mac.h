@@ -343,6 +343,7 @@ private:
   // based on SNR but find duplicates based on BSSID, and in practice this
   // candidate vector should not be too large.
 
+    Time m_scanningstartoffset;    ///< m_scanningstartoffset
     Time m_twtstarttime;    ///< m_twtstarttime
     Time m_twtoffset;    ///< m_twtoffset
     Time m_twtduration;  ///< m_twtduration
