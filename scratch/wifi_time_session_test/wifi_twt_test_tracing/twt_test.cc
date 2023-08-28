@@ -34,14 +34,26 @@ using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("wifi-test");
 
-int dc = 0;
+void cb_rx_drop(Ptr<const Packet> packet){
+  LlcSnapHeader llc;
+  auto copy = packet->Copy();
+  copy->RemoveHeader (llc);
+  Ipv4Header head;
+  copy->PeekHeader (head);
 
-void cb(Ptr<const Packet> p){
-  p->PrintPacketTags (std::cout);
-  std::cout<< dc <<std::endl;
-  dc ++;
+  NS_LOG_UNCOND("cb_rx_drop:" << (Simulator::Now()).GetMicroSeconds() << "," << head.GetSource() << "," << head.GetDestination()<<"," << packet->GetSize());
+
 }
+void cb_rx_succ(Ptr<const Packet> packet){
+  LlcSnapHeader llc;
+  auto copy = packet->Copy();
+  copy->RemoveHeader (llc);
+  Ipv4Header head;
+  copy->PeekHeader (head);
 
+  NS_LOG_UNCOND("cb_rx_succ:" << (Simulator::Now()).GetMicroSeconds() << "," << head.GetSource() << "," << head.GetDestination()<<"," << packet->GetSize());
+
+}
 
 void cb_asso(uint16_t /* AID */ a, Mac48Address b){
   NS_LOG_UNCOND("AssociatedSta:" << a << ":" << b  <<  " time:" << (Simulator::Now()).GetMicroSeconds() );
@@ -68,14 +80,7 @@ void cb_tx_ended(Ptr<const Packet> packet){
           NS_LOG_UNCOND("cb_tx_end:" << (Simulator::Now()).GetMicroSeconds() << "," << head.GetAddr2 () << "," << head.GetAddr1 ()<<"," << packet->GetSize() << "," << head.GetSequenceNumber());
       }
 }
-void cb_rx(Ptr<const Packet> packet){
-    WifiMacHeader head;
-    packet->PeekHeader (head);
-    if (head.IsQosData() or head.IsData())
-      {
-          NS_LOG_UNCOND("cb_rx:" << (Simulator::Now()).GetMilliSeconds() << "," << head.GetAddr2 () << "," << head.GetAddr1 ()<<"," << packet->GetSize());
-      }
-}
+
 int main (int argc, char *argv[])
 {
   std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
@@ -83,6 +88,7 @@ int main (int argc, char *argv[])
   LogComponentEnableAll (LOG_PREFIX_TIME);
   LogComponentEnableAll (LOG_PREFIX_NODE);
   LogComponentEnable ("wifi-test", LOG_LEVEL_INFO);
+  LogComponentEnable ("StaWifiMac", LOG_LEVEL_INFO);
 
 
   std::string phyMode ("S1gOfdmRate0_30MbpsBW1MHz");
@@ -95,14 +101,13 @@ int main (int argc, char *argv[])
 
   uint32_t simSeed = 1000;
   uint32_t openGymPort = 5000;
-  int simTime = 5;
+  int simTime = 10;
 
   int time_for_arp_start = 1;
   int time_for_arp_end = 2;
 
-  double time_for_test_start = 2 - 0.01;
 
-  bool verbose = false;
+  bool verbose = true;
 
   CommandLine cmd (__FILE__);
   cmd.AddValue ("phyMode", "Wifi Phy mode", phyMode);
@@ -115,8 +120,11 @@ int main (int argc, char *argv[])
   cmd.AddValue ("simSeed", "Seed for random generator. Default: 1", simSeed);
   cmd.AddValue ("simTime", "simulation time", simTime);
   cmd.Parse (argc, argv);
-  RngSeedManager::SetSeed (1);
+  RngSeedManager::SetSeed (6);
   RngSeedManager::SetRun(simSeed);
+
+  double twt_start_time = (double) n_sta / 10 + 10;
+  double time_for_test_start = twt_start_time - 0.01;
   double time_for_test_end = time_for_test_start + simTime + 0.01;
   Time interval = MicroSeconds(interval_in_us);
 
@@ -127,6 +135,7 @@ int main (int argc, char *argv[])
   std::cout << "n_sta:" << n_sta << std::endl;
   std::cout << "simSeed:" << simSeed << std::endl;
   std::cout << "simTime:" << simTime << std::endl;
+  std::cout << "time_for_test_start:" << time_for_test_start << std::endl;
 
   // Fix non-unicast data rate to be the same as that of unicast
   Config::SetDefault ("ns3::WifiRemoteStationManager::NonUnicastMode",
@@ -178,7 +187,7 @@ int main (int argc, char *argv[])
   // The below set of helpers will help us to put together the wifi NICs we want
   WifiHelper wifi;
   wifi.SetStandard (ns3::WIFI_STANDARD_80211ah);
-//    wifi.EnableLogComponents ();  // Turn on all Wifi logging
+//  wifi.EnableLogComponents ();  // Turn on all Wifi logging
 
   YansWifiPhyHelper wifiPhy;
   wifiPhy.Set ("ChannelSettings", StringValue ("{0, 1, BAND_S1GHZ, 0}"));
@@ -193,9 +202,6 @@ int main (int argc, char *argv[])
 
   Ptr<YansWifiChannel> yanswc = CreateObject <YansWifiChannel> ();
   yanswc->SetPropagationLossModel (lossModel);
-//  Ptr<RandomPropagationDelayModel> propagationdelayModel = CreateObject <RandomPropagationDelayModel>();
-//  propagationdelayModel->SetAttribute ("Variable",StringValue("ns3::UniformRandomVariable[Min=0.0|Max=6e-6]"));
-//  yanswc->SetPropagationDelayModel (propagationdelayModel);
   yanswc->SetPropagationDelayModel (CreateObject <ConstantSpeedPropagationDelayModel> ());
   wifiPhy.SetChannel (yanswc);
 
@@ -227,8 +233,8 @@ int main (int argc, char *argv[])
   wifiMac.SetType ("ns3::StaWifiMac",
                    "Ssid", SsidValue (ssid),
                    "QosSupported", BooleanValue (false),
-                   "WaitBeaconTimeout", TimeValue (MilliSeconds (200)),
-                   "AssocRequestTimeout", TimeValue (MilliSeconds (100)),
+                   "WaitBeaconTimeout", TimeValue (MilliSeconds (200)), // time to collect beacon
+                   "AssocRequestTimeout", TimeValue (MilliSeconds (200)),
                    "MaxMissedBeacons", UintegerValue (100000)
   );
   NetDeviceContainer staDevice = wifi.Install (wifiPhy, wifiMac, sta_nodes);
@@ -247,7 +253,7 @@ int main (int argc, char *argv[])
     auto m = staDevice.Get(i);
     auto w = m->GetObject<WifiNetDevice>();
     auto v = DynamicCast<StaWifiMac>(w->GetMac());
-    v->SetAttribute("twtstarttime", TimeValue(MicroSeconds(2000000)));
+    v->SetAttribute("twtstarttime", TimeValue(MicroSeconds(twt_start_time*1000000)));
     v->SetAttribute("twtoffset", TimeValue(MicroSeconds((i%4)*10000)));
     v->SetAttribute("twtduration", TimeValue(MicroSeconds(10000)));
     v->SetAttribute("twtperiodicity", TimeValue(MicroSeconds(40000)));
@@ -267,8 +273,8 @@ int main (int argc, char *argv[])
             auto m = apDevice.Get(i);
             auto w = m->GetObject<WifiNetDevice>();
             auto v = w->GetMac();
-            v->TraceConnectWithoutContext("MacRx", MakeCallback(&cb_rx));
-            v->TraceConnectWithoutContext("MacRxDrop", MakeCallback(&cb));
+            v->TraceConnectWithoutContext("MacRx", MakeCallback(&cb_rx_succ));
+            v->TraceConnectWithoutContext("MacRxDrop", MakeCallback(&cb_rx_drop));
             v->TraceConnectWithoutContext("AssociatedSta", MakeCallback(&cb_asso));
             v->TraceConnectWithoutContext("DeAssociatedSta", MakeCallback(&cb_deasso));
         }
