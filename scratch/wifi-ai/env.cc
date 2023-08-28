@@ -95,7 +95,6 @@ int main (int argc, char *argv[])
   int time_for_arp_start = 1;
   int time_for_arp_end = 2;
 
-  double time_for_test_start = 2 - 0.01;
 
   bool verbose = false;
 
@@ -112,6 +111,8 @@ int main (int argc, char *argv[])
   cmd.Parse (argc, argv);
   RngSeedManager::SetSeed (1);
   RngSeedManager::SetRun(simSeed);
+
+  double time_for_test_start = (double) n_sta / 10 - 0.01;
   double time_for_test_end = time_for_test_start + simTime + 0.01;
   Time interval = MicroSeconds(interval_in_us);
 
@@ -122,6 +123,7 @@ int main (int argc, char *argv[])
   std::cout << "n_sta:" << n_sta << std::endl;
   std::cout << "simSeed:" << simSeed << std::endl;
   std::cout << "simTime:" << simTime << std::endl;
+  std::cout << "time_for_test_start:" << time_for_test_start << std::endl;
 
   // Fix non-unicast data rate to be the same as that of unicast
   Config::SetDefault ("ns3::WifiRemoteStationManager::NonUnicastMode",
