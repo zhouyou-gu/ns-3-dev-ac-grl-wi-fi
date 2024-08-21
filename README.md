@@ -1,4 +1,4 @@
-### NS-3 codes for "Graph Representation Learning for Contention and Interference Management in Wireless Networks".
+### NS-3 codes for "Graph Representation Learning for Contention and Interference Management in Wireless Networks". 
 
 
 The Network Simulator, Version 3
