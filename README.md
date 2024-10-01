@@ -1,5 +1,7 @@
-### NS-3 codes for "Graph Representation Learning for Contention and Interference Management in Wireless Networks". for sparse-wi-fi 
+### NS-3 codes for sparse-ggm-wi-fi project. 
 
+
+### NS-3 codes for "Graph Representation Learning for Contention and Interference Management in Wireless Networks". 
 
 The Network Simulator, Version 3
 ================================
