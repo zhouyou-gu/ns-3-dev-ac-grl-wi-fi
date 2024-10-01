@@ -33,6 +33,7 @@ TAGS
 
 build-dir/
 build/
+build-vscode/
 /.cproject
 /.project
 
