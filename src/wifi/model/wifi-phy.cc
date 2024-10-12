@@ -160,7 +160,7 @@ WifiPhy::GetTypeId (void)
                    " the noise output of the actual receiver to the noise output of an "
                    " ideal receiver with the same overall gain and bandwidth when the receivers "
                    " are connected to sources at the standard noise temperature T0 (usually 290 K)\".",
-                   DoubleValue (20),
+                   DoubleValue (10),
                    MakeDoubleAccessor (&WifiPhy::SetRxNoiseFigure),
                    MakeDoubleChecker<double> ())
     .AddAttribute ("State",
