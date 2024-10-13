@@ -41,6 +41,31 @@ std::map<uint16_t, std::array<uint64_t, 8>> s_ofdmRatesBpsList = {
 
 NS_LOG_COMPONENT_DEFINE ("wifi-test");
 
+// Callback function for tx packet drop events
+void
+cb_tx_drop (Ptr<const Packet> packet)
+{
+  LlcSnapHeader llc;
+  auto copy = packet->Copy ();
+  copy->RemoveHeader (llc);
+  Ipv4Header head;
+  copy->PeekHeader (head);
+  NS_LOG_UNCOND ("cb_tx_drop:" << Simulator::Now ().GetMicroSeconds () << "," << head.GetSource ()
+                               << "," << head.GetDestination () << "," << packet->GetSize ());
+}
+// Callback function for tx packet succ events
+void
+cb_tx_succ (Ptr<const Packet> packet)
+{
+  LlcSnapHeader llc;
+  auto copy = packet->Copy ();
+  copy->RemoveHeader (llc);
+  Ipv4Header head;
+  copy->PeekHeader (head);
+  NS_LOG_UNCOND ("cb_tx_succ:" << Simulator::Now ().GetMicroSeconds () << "," << head.GetSource ()
+                               << "," << head.GetDestination () << "," << packet->GetSize ());
+}
+
 // Callback function for packet drop events
 void
 cb_rx_drop (Ptr<const Packet> packet)
@@ -129,7 +154,8 @@ main (int argc, char *argv[])
   LogComponentEnableAll (LOG_PREFIX_TIME);
   LogComponentEnableAll (LOG_PREFIX_NODE);
   LogComponentEnable ("wifi-test", LOG_LEVEL_INFO);
-  LogComponentEnable ("StaWifiMac", LOG_LEVEL_INFO);
+  LogComponentEnable ("StaWifiMac", LOG_LEVEL_ALL);
+  LogComponentEnable ("ApWifiMac", LOG_LEVEL_ALL);
 
   // Simulation parameters
   std::string phyMode ("OfdmRate6Mbps");
@@ -214,6 +240,7 @@ main (int argc, char *argv[])
   // Set up Wi-Fi devices
   WifiHelper wifi;
   wifi.SetStandard (ns3::WIFI_STANDARD_80211a); // Set Wi-Fi standard to 802.11ah
+  //   wifi.EnableLogComponents (); // Turn on all Wifi logging
 
   YansWifiPhyHelper wifiPhy;
   wifiPhy.Set ("ChannelSettings", StringValue ("{161, 20, BAND_5GHZ, 0}"));
@@ -255,12 +282,9 @@ main (int argc, char *argv[])
       auto m = apDevice.Get (i);
       auto w = m->GetObject<WifiNetDevice> ();
       auto v = DynamicCast<ApWifiMac> (w->GetMac ());
-      v->SetBeaconOffset (i * (v->GetBeaconInterval () / n_ap));
-      std::cout << "AP: " << i << " BeaconOffset:" << v->GetBeaconOffset () << std::endl;
       v->GetTxop ()->GetWifiMacQueue ()->SetMaxSize (QueueSize ("500p"));
-      //Disable beacons when the test start
-      Simulator::Schedule (Seconds (time_for_test_start), &ApWifiMac::SetBeaconGeneration, v,
-                           false);
+      // Disable beacons since we manually associate sta
+      v->SetBeaconGeneration (false);
     }
 
   // Configure STA devices
@@ -309,15 +333,25 @@ main (int argc, char *argv[])
           v->TraceConnectWithoutContext ("PhyTxBegin", MakeCallback (&cb_tx_start));
           v->TraceConnectWithoutContext ("PhyTxEnd", MakeCallback (&cb_tx_ended));
         }
+      for (uint32_t i = 0; i < n_sta; i++)
+        {
+          auto m = staDevice.Get (i);
+          auto w = m->GetObject<WifiNetDevice> ();
+          auto v = w->GetMac ();
+          v->TraceConnectWithoutContext ("MacTx", MakeCallback (&cb_tx_succ));
+          v->TraceConnectWithoutContext ("MacTxDrop", MakeCallback (&cb_tx_drop));
+          v->TraceConnectWithoutContext ("MacRx", MakeCallback (&cb_rx_succ));
+          v->TraceConnectWithoutContext ("MacRxDrop", MakeCallback (&cb_rx_drop));
+        }
       for (int i = 0; i < n_ap; ++i)
         {
           auto m = apDevice.Get (i);
           auto w = m->GetObject<WifiNetDevice> ();
           auto v = w->GetMac ();
+          v->TraceConnectWithoutContext ("MacTx", MakeCallback (&cb_tx_succ));
+          v->TraceConnectWithoutContext ("MacTxDrop", MakeCallback (&cb_tx_drop));
           v->TraceConnectWithoutContext ("MacRx", MakeCallback (&cb_rx_succ));
           v->TraceConnectWithoutContext ("MacRxDrop", MakeCallback (&cb_rx_drop));
-          v->TraceConnectWithoutContext ("AssociatedSta", MakeCallback (&cb_asso));
-          v->TraceConnectWithoutContext ("DeAssociatedSta", MakeCallback (&cb_deasso));
         }
     }
 
@@ -499,6 +533,39 @@ main (int argc, char *argv[])
       std::cout << "STA:" << j << "-" << "AP:" << max_i << ", Gain: " << max_gain
                 << "\n\t\t noiseFloor:" << WToDbm (noiseFloor) << " phyMode:" << max_mode
                 << std::endl;
+    }
+
+  // Manually associate STA-AP
+  for (uint32_t j = 0; j < n_sta; j++)
+    {
+      double max_gain = -std::numeric_limits<double>::infinity ();
+      uint32_t max_i = 0;
+      for (uint32_t i = 0; i < n_ap; i++)
+        {
+          double gain = lossModel->CalcRxPower (0, ap_nodes.Get (i)->GetObject<MobilityModel> (),
+                                                sta_nodes.Get (j)->GetObject<MobilityModel> ());
+          if (gain >= max_gain)
+            {
+              max_gain = gain;
+              max_i = i;
+            }
+        }
+      auto sd = staDevice.Get (j);
+      auto sd_w = sd->GetObject<WifiNetDevice> ();
+      auto s = DynamicCast<StaWifiMac> (sd_w->GetMac ());
+      auto s_addr = s->GetAddress ();
+
+      auto ad = apDevice.Get (max_i);
+      auto ad_w = ad->GetObject<WifiNetDevice> ();
+      auto a = DynamicCast<ApWifiMac> (ad_w->GetMac ());
+      auto a_addr = a->GetAddress ();
+
+      s->ManualAssoUpdateApInfo (a->ManualAssoGetProbRsp (), a->GetAddress (), a->GetBssid ());
+      auto assoReq = s->ManualAssoGetAssoReq ();
+      a->ManualAssoSetAssoReq (assoReq, s_addr);
+      auto assoRsp = a->ManualAssoGetAssoRsp (s_addr);
+      s->ManualAssoSetAssoRsp (assoRsp, a_addr);
+      a->ManualAssoGetAssoRspTxOk (s_addr);
     }
 
   // Set simulation stop time

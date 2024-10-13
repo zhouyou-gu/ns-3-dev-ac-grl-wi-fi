@@ -153,6 +153,10 @@ public:
 
   void NotifyChannelSwitching (void) override;
 
+  void ManualAssoUpdateApInfo(MgtProbeResponseHeader probeResp, Mac48Address apAddr, Mac48Address bssid);
+  MgtAssocRequestHeader ManualAssoGetAssoReq(void);
+  void ManualAssoSetAssoRsp(MgtAssocResponseHeader assocResp, Mac48Address from);
+  
 private:
   /**
    * The current MAC state of the STA.
@@ -321,9 +325,8 @@ private:
 
   void DoInitialize (void) override;
 
-    void StartTWT(void);
-    void ScheduleTWT(void);
-
+  void StartTWT (void);
+  void ScheduleTWT (void);
 
   MacState m_state;            ///< MAC state
   uint16_t m_aid;              ///< Association AID
@@ -343,12 +346,11 @@ private:
   // based on SNR but find duplicates based on BSSID, and in practice this
   // candidate vector should not be too large.
 
-    Time m_scanningstartoffset;    ///< m_scanningstartoffset
-    Time m_twtstarttime;    ///< m_twtstarttime
-    Time m_twtoffset;    ///< m_twtoffset
-    Time m_twtduration;  ///< m_twtduration
-    Time m_twtperiodicity;  ///< m_twtperiodicity
-
+  Time m_scanningstartoffset; ///< m_scanningstartoffset
+  Time m_twtstarttime; ///< m_twtstarttime
+  Time m_twtoffset; ///< m_twtoffset
+  Time m_twtduration; ///< m_twtduration
+  Time m_twtperiodicity; ///< m_twtperiodicity
 
   TracedCallback<Mac48Address> m_assocLogger;   ///< association logger
   TracedCallback<Mac48Address> m_deAssocLogger; ///< disassociation logger

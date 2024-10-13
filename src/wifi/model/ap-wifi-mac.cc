@@ -127,6 +127,256 @@ ApWifiMac::~ApWifiMac ()
   NS_LOG_FUNCTION (this);
   m_staList.clear ();
 }
+void
+ApWifiMac::ManualAssoSetAssoReq (MgtAssocRequestHeader assocReq, Mac48Address from)
+{
+  CapabilityInformation capabilities = assocReq.GetCapabilities ();
+  GetWifiRemoteStationManager ()->AddSupportedPhyPreamble (from, capabilities.IsShortPreamble ());
+  SupportedRates rates = assocReq.GetSupportedRates ();
+  bool problem = false;
+  if (rates.GetNRates () == 0)
+    {
+      problem = true;
+    }
+  if (GetHtSupported ())
+    {
+      //check whether the HT STA supports all MCSs in Basic MCS Set
+      HtCapabilities htcapabilities = assocReq.GetHtCapabilities ();
+      if (htcapabilities.IsSupportedMcs (0))
+        {
+          for (uint8_t i = 0; i < GetWifiRemoteStationManager ()->GetNBasicMcs (); i++)
+            {
+              WifiMode mcs = GetWifiRemoteStationManager ()->GetBasicMcs (i);
+              if (!htcapabilities.IsSupportedMcs (mcs.GetMcsValue ()))
+                {
+                  problem = true;
+                  break;
+                }
+            }
+        }
+    }
+  if (GetVhtSupported ())
+    {
+      //check whether the VHT STA supports all MCSs in Basic MCS Set
+      VhtCapabilities vhtcapabilities = assocReq.GetVhtCapabilities ();
+      if (vhtcapabilities.GetVhtCapabilitiesInfo () != 0)
+        {
+          for (uint8_t i = 0; i < GetWifiRemoteStationManager ()->GetNBasicMcs (); i++)
+            {
+              WifiMode mcs = GetWifiRemoteStationManager ()->GetBasicMcs (i);
+              if (!vhtcapabilities.IsSupportedTxMcs (mcs.GetMcsValue ()))
+                {
+                  problem = true;
+                  break;
+                }
+            }
+        }
+    }
+  if (GetHeSupported ())
+    {
+      //check whether the HE STA supports all MCSs in Basic MCS Set
+      HeCapabilities hecapabilities = assocReq.GetHeCapabilities ();
+      if (hecapabilities.GetSupportedMcsAndNss () != 0)
+        {
+          for (uint8_t i = 0; i < GetWifiRemoteStationManager ()->GetNBasicMcs (); i++)
+            {
+              WifiMode mcs = GetWifiRemoteStationManager ()->GetBasicMcs (i);
+              if (!hecapabilities.IsSupportedTxMcs (mcs.GetMcsValue ()))
+                {
+                  problem = true;
+                  break;
+                }
+            }
+        }
+    }
+  if (problem)
+    {
+      NS_LOG_ERROR ("Manual association fail!" << from );
+      // SendAssocResp (hdr->GetAddr2 (), false, false);
+    }
+  else
+    {
+      NS_LOG_DEBUG ("The Basic Rate set modes are supported by the station");
+      //record all its supported modes in its associated WifiRemoteStation
+      for (const auto &mode : GetWifiPhy ()->GetModeList ())
+        {
+          if (rates.IsSupportedRate (mode.GetDataRate (GetWifiPhy ()->GetChannelWidth ())))
+            {
+              GetWifiRemoteStationManager ()->AddSupportedMode (from, mode);
+            }
+        }
+      if (GetErpSupported () && GetWifiRemoteStationManager ()->GetErpOfdmSupported (from) &&
+          capabilities.IsShortSlotTime ())
+        {
+          GetWifiRemoteStationManager ()->AddSupportedErpSlotTime (from, true);
+        }
+      if (GetHtSupported ())
+        {
+          HtCapabilities htCapabilities = assocReq.GetHtCapabilities ();
+          if (htCapabilities.IsSupportedMcs (0))
+            {
+              GetWifiRemoteStationManager ()->AddStationHtCapabilities (from, htCapabilities);
+            }
+        }
+      if (GetVhtSupported ())
+        {
+          VhtCapabilities vhtCapabilities = assocReq.GetVhtCapabilities ();
+          //we will always fill in RxHighestSupportedLgiDataRate field at TX, so this can be used to check whether it supports VHT
+          if (vhtCapabilities.GetRxHighestSupportedLgiDataRate () > 0)
+            {
+              GetWifiRemoteStationManager ()->AddStationVhtCapabilities (from, vhtCapabilities);
+              for (const auto &mcs : GetWifiPhy ()->GetMcsList (WIFI_MOD_CLASS_VHT))
+                {
+                  if (vhtCapabilities.IsSupportedTxMcs (mcs.GetMcsValue ()))
+                    {
+                      GetWifiRemoteStationManager ()->AddSupportedMcs (from, mcs);
+                      //here should add a control to add basic MCS when it is implemented
+                    }
+                }
+            }
+        }
+      if (GetHtSupported ())
+        {
+          ExtendedCapabilities extendedCapabilities = assocReq.GetExtendedCapabilities ();
+          //TODO: to be completed
+        }
+      if (GetHeSupported ())
+        {
+          HeCapabilities heCapabilities = assocReq.GetHeCapabilities ();
+          if (heCapabilities.GetSupportedMcsAndNss () != 0)
+            {
+              GetWifiRemoteStationManager ()->AddStationHeCapabilities (from, heCapabilities);
+              for (const auto &mcs : GetWifiPhy ()->GetMcsList (WIFI_MOD_CLASS_HE))
+                {
+                  if (heCapabilities.IsSupportedTxMcs (mcs.GetMcsValue ()))
+                    {
+                      GetWifiRemoteStationManager ()->AddSupportedMcs (from, mcs);
+                      //here should add a control to add basic MCS when it is implemented
+                    }
+                }
+            }
+        }
+      GetWifiRemoteStationManager ()->RecordWaitAssocTxOk (from);
+      NS_LOG_DEBUG ("No need to send association response with success status");
+    }
+  return;
+}
+
+MgtAssocResponseHeader
+ApWifiMac::ManualAssoGetAssoRsp (Mac48Address to)
+{
+  MgtAssocResponseHeader assoc;
+  StatusCode code;
+  code.SetSuccess ();
+  uint16_t aid = 0;
+  bool found = false;
+  for (const auto &sta : m_staList)
+    {
+      if (sta.second == to)
+        {
+          aid = sta.first;
+          found = true;
+          break;
+        }
+    }
+  if (!found)
+    {
+      aid = GetNextAssociationId ();
+      m_staList.insert (std::make_pair (aid, to));
+      m_assocLogger (aid, to);
+      GetWifiRemoteStationManager ()->SetAssociationId (to, aid);
+      if (GetWifiRemoteStationManager ()->GetDsssSupported (to) &&
+          !GetWifiRemoteStationManager ()->GetErpOfdmSupported (to))
+        {
+          m_numNonErpStations++;
+        }
+      if (!GetWifiRemoteStationManager ()->GetHtSupported (to))
+        {
+          m_numNonHtStations++;
+        }
+      UpdateShortSlotTimeEnabled ();
+      UpdateShortPreambleEnabled ();
+    }
+  assoc.SetAssociationId (aid);
+
+  assoc.SetSupportedRates (GetSupportedRates ());
+  assoc.SetStatusCode (code);
+  assoc.SetCapabilities (GetCapabilities ());
+  if (GetErpSupported ())
+    {
+      assoc.SetErpInformation (GetErpInformation ());
+    }
+  if (GetQosSupported ())
+    {
+      assoc.SetEdcaParameterSet (GetEdcaParameterSet ());
+    }
+  if (GetHtSupported ())
+    {
+      assoc.SetExtendedCapabilities (GetExtendedCapabilities ());
+      assoc.SetHtCapabilities (GetHtCapabilities ());
+      assoc.SetHtOperation (GetHtOperation ());
+    }
+  if (GetVhtSupported ())
+    {
+      assoc.SetVhtCapabilities (GetVhtCapabilities ());
+      assoc.SetVhtOperation (GetVhtOperation ());
+    }
+  if (GetHeSupported ())
+    {
+      assoc.SetHeCapabilities (GetHeCapabilities ());
+      assoc.SetHeOperation (GetHeOperation ());
+      assoc.SetMuEdcaParameterSet (GetMuEdcaParameterSet ());
+    }
+  return assoc;
+}
+void
+ApWifiMac::ManualAssoGetAssoRspTxOk (Mac48Address to)
+{
+
+  GetWifiRemoteStationManager ()->RecordGotAssocTxOk (to);
+  return;
+}
+MgtProbeResponseHeader
+ApWifiMac::ManualAssoGetProbRsp (void)
+{
+  MgtProbeResponseHeader probe;
+  probe.SetSsid (GetSsid ());
+  probe.SetSupportedRates (GetSupportedRates ());
+  probe.SetBeaconIntervalUs (GetBeaconInterval ().GetMicroSeconds ());
+  probe.SetCapabilities (GetCapabilities ());
+  GetWifiRemoteStationManager ()->SetShortPreambleEnabled (m_shortPreambleEnabled);
+  GetWifiRemoteStationManager ()->SetShortSlotTimeEnabled (m_shortSlotTimeEnabled);
+  if (GetDsssSupported ())
+    {
+      probe.SetDsssParameterSet (GetDsssParameterSet ());
+    }
+  if (GetErpSupported ())
+    {
+      probe.SetErpInformation (GetErpInformation ());
+    }
+  if (GetQosSupported ())
+    {
+      probe.SetEdcaParameterSet (GetEdcaParameterSet ());
+    }
+  if (GetHtSupported ())
+    {
+      probe.SetExtendedCapabilities (GetExtendedCapabilities ());
+      probe.SetHtCapabilities (GetHtCapabilities ());
+      probe.SetHtOperation (GetHtOperation ());
+    }
+  if (GetVhtSupported ())
+    {
+      probe.SetVhtCapabilities (GetVhtCapabilities ());
+      probe.SetVhtOperation (GetVhtOperation ());
+    }
+  if (GetHeSupported ())
+    {
+      probe.SetHeCapabilities (GetHeCapabilities ());
+      probe.SetHeOperation (GetHeOperation ());
+      probe.SetMuEdcaParameterSet (GetMuEdcaParameterSet ());
+    }
+  return probe;
+}
 
 void
 ApWifiMac::DoDispose ()

@@ -24,6 +24,7 @@
 #define AP_WIFI_MAC_H
 
 #include "wifi-mac.h"
+#include "mgt-headers.h"
 #include <unordered_map>
 
 namespace ns3 {
@@ -145,6 +146,12 @@ public:
   uint8_t GetMaxBufferStatus (Mac48Address address) const;
   Time GetBeaconOffset (void) const;
   void SetBeaconOffset (Time interval);
+
+  MgtProbeResponseHeader ManualAssoGetProbRsp(void);
+  void ManualAssoSetAssoReq (MgtAssocRequestHeader assocReq, Mac48Address from);
+  MgtAssocResponseHeader ManualAssoGetAssoRsp (Mac48Address to);
+  void ManualAssoGetAssoRspTxOk (Mac48Address to);
+
 private:
   void Receive (Ptr<WifiMacQueueItem> mpdu)  override;
   /**

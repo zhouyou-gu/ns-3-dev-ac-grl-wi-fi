@@ -130,9 +130,76 @@ void
 StaWifiMac::DoInitialize (void)
 {
   NS_LOG_FUNCTION (this);
-  Simulator::Schedule (m_scanningstartoffset,&StaWifiMac::StartScanning, this);
-  StartTWT ();
+  if (!IsAssociated ())
+    {
+      Simulator::Schedule (m_scanningstartoffset, &StaWifiMac::StartScanning, this);
+    }
+    else{
+      NS_LOG_DEBUG ("Manually assocated, no need to scan");
 
+    }
+  StartTWT ();
+}
+MgtAssocRequestHeader
+StaWifiMac::ManualAssoGetAssoReq (void)
+{
+  MgtAssocRequestHeader assoc;
+  assoc.SetSsid (GetSsid ());
+  assoc.SetSupportedRates (GetSupportedRates ());
+  assoc.SetCapabilities (GetCapabilities ());
+  assoc.SetListenInterval (0);
+  if (GetHtSupported ())
+    {
+      assoc.SetExtendedCapabilities (GetExtendedCapabilities ());
+      assoc.SetHtCapabilities (GetHtCapabilities ());
+    }
+  if (GetVhtSupported ())
+    {
+      assoc.SetVhtCapabilities (GetVhtCapabilities ());
+    }
+  if (GetHeSupported ())
+    {
+      assoc.SetHeCapabilities (GetHeCapabilities ());
+    }
+  return assoc;
+}
+void
+StaWifiMac::ManualAssoSetAssoRsp (MgtAssocResponseHeader assocResp, Mac48Address from)
+{
+
+  if (m_assocRequestEvent.IsRunning ())
+    {
+      m_assocRequestEvent.Cancel ();
+    }
+  if (assocResp.GetStatusCode ().IsSuccess ())
+    {
+      SetState (ASSOCIATED);
+      m_aid = assocResp.GetAssociationId ();
+      UpdateApInfoFromAssocResp (assocResp, from);
+      if (!m_linkUp.IsNull ())
+        {
+          m_linkUp ();
+        }
+    }
+  else
+    {
+      NS_LOG_DEBUG ("association refused");
+      if (m_candidateAps.empty ())
+        {
+          SetState (REFUSED);
+        }
+      else
+        {
+          ScanningTimeout ();
+        }
+    }
+  return;
+}
+void
+StaWifiMac::ManualAssoUpdateApInfo (MgtProbeResponseHeader probeResp, Mac48Address apAddr,
+                                    Mac48Address bssid)
+{
+  UpdateApInfoFromProbeResp (probeResp, apAddr, bssid);
 }
 
 StaWifiMac::~StaWifiMac ()
