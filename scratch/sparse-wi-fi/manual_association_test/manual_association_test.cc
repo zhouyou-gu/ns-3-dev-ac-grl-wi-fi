@@ -412,6 +412,7 @@ main (int argc, char *argv[])
     }
 
   // Install UDP Client applications on the STA nodes
+  double mini_application_starting_time_head  = 1e-5;
   for (int i = 0; i < n_sta; ++i)
     {
       uint16_t port = i + port_off_set;
@@ -451,18 +452,19 @@ main (int argc, char *argv[])
   // Initialize ARP caches for STAs
   for (int j = 0; j < n_sta; j++)
     {
-      std::vector<double> gain_list;
-      for (int i = 0; i < n_ap; i++)
+      double max_gain = -std::numeric_limits<double>::infinity ();
+      uint32_t max_ap_ind = 0;
+      for (uint32_t i = 0; i < n_ap; i++)
         {
-          auto A = ap_nodes.Get (i)->GetObject<MobilityModel> ();
-          auto B = sta_nodes.Get (j)->GetObject<MobilityModel> ();
-          double g = lossModel->CalcRxPower (0, B, A);
-          gain_list.push_back (g);
-          std::cout << "sta: " << j << " ap:" << i << " " << g << std::endl;
+          double gain = lossModel->CalcRxPower (0, ap_nodes.Get (i)->GetObject<MobilityModel> (),
+                                                sta_nodes.Get (j)->GetObject<MobilityModel> ());
+          if (gain >= max_gain)
+            {
+              max_gain = gain;
+              max_ap_ind = i;
+            }
         }
-      auto result = std::max_element (gain_list.begin (), gain_list.end ());
-      int ind = std::distance (gain_list.begin (), result);
-      Mac48Address addr = Mac48Address::ConvertFrom (apDevice.Get (ind)->GetAddress ());
+      Mac48Address addr = Mac48Address::ConvertFrom (apDevice.Get (max_ap_ind)->GetAddress ());
       Ptr<ArpCache> arp = CreateObject<ArpCache> ();
       arp->SetAliveTimeout (Seconds (3600 * 24 * 365)); // Set ARP cache timeout
       ArpCache::Entry *entry = arp->Add (server_to_gate_intf.GetAddress (0));
@@ -488,7 +490,7 @@ main (int argc, char *argv[])
   for (uint32_t j = 0; j < n_sta; j++)
     {
       double max_gain = -std::numeric_limits<double>::infinity ();
-      uint32_t max_i = 0;
+      uint32_t max_ap_ind = 0;
       for (uint32_t i = 0; i < n_ap; i++)
         {
           double gain = lossModel->CalcRxPower (0, ap_nodes.Get (i)->GetObject<MobilityModel> (),
@@ -496,7 +498,7 @@ main (int argc, char *argv[])
           if (gain >= max_gain)
             {
               max_gain = gain;
-              max_i = i;
+              max_ap_ind = i;
             }
         }
       WifiTxVector txVector;
@@ -530,7 +532,7 @@ main (int argc, char *argv[])
         }
       auto a = DynamicCast<StaWifiMac> (w->GetMac ());
       a->GetWifiRemoteStationManager ()->SetAttribute ("DataMode", StringValue (max_mode));
-      std::cout << "STA:" << j << "-" << "AP:" << max_i << ", Gain: " << max_gain
+      std::cout << "STA:" << j << "-" << "AP:" << max_ap_ind << ", Gain: " << max_gain
                 << "\n\t\t noiseFloor:" << WToDbm (noiseFloor) << " phyMode:" << max_mode
                 << std::endl;
     }
@@ -539,7 +541,7 @@ main (int argc, char *argv[])
   for (uint32_t j = 0; j < n_sta; j++)
     {
       double max_gain = -std::numeric_limits<double>::infinity ();
-      uint32_t max_i = 0;
+      uint32_t max_ap_ind = 0;
       for (uint32_t i = 0; i < n_ap; i++)
         {
           double gain = lossModel->CalcRxPower (0, ap_nodes.Get (i)->GetObject<MobilityModel> (),
@@ -547,7 +549,7 @@ main (int argc, char *argv[])
           if (gain >= max_gain)
             {
               max_gain = gain;
-              max_i = i;
+              max_ap_ind = i;
             }
         }
       auto sd = staDevice.Get (j);
@@ -555,7 +557,7 @@ main (int argc, char *argv[])
       auto s = DynamicCast<StaWifiMac> (sd_w->GetMac ());
       auto s_addr = s->GetAddress ();
 
-      auto ad = apDevice.Get (max_i);
+      auto ad = apDevice.Get (max_ap_ind);
       auto ad_w = ad->GetObject<WifiNetDevice> ();
       auto a = DynamicCast<ApWifiMac> (ad_w->GetMac ());
       auto a_addr = a->GetAddress ();

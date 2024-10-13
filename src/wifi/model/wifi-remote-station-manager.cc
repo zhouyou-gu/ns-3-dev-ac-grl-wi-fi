@@ -1600,10 +1600,6 @@ bool
 WifiRemoteStationManager::DoNeedRetransmission (WifiRemoteStation *station,
                                                 Ptr<const Packet> packet, bool normally)
 {
-  if(Simulator::Now().GetSeconds() > 5 and normally){
-    NS_LOG_DEBUG("need retx time:"<<Simulator::Now());
-    return false;
-  }
   return normally;
 }
 
