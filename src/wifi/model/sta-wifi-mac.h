@@ -157,6 +157,8 @@ public:
   MgtAssocRequestHeader ManualAssoGetAssoReq(void);
   void ManualAssoSetAssoRsp(MgtAssocResponseHeader assocResp, Mac48Address from);
   
+  void UpdateTWTConfig(bool twtenabled, Time twtstarttime,Time twtoffset, Time twtduration, Time twtperiodicity, Time twtguardtime);
+  
 private:
   /**
    * The current MAC state of the STA.

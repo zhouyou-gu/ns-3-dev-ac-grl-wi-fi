@@ -1306,9 +1306,25 @@ StaWifiMac::StartTWT(void) {
 void
 StaWifiMac::ScheduleTWT(void) {
     NS_LOG_FUNCTION (this);
-    Simulator::Schedule(m_twtoffset,&WifiMac::NotifyTWTAwake,this);
-    Simulator::Schedule(m_twtoffset+m_twtduration-m_twtguardtime,&WifiMac::NotifyTWTSleep,this);
-    Simulator::Schedule(m_twtperiodicity,&StaWifiMac::ScheduleTWT,this);
+    if(m_twtenabled){
+      Simulator::Schedule(m_twtoffset,&WifiMac::NotifyTWTAwake,this);
+      Simulator::Schedule(m_twtoffset+m_twtduration-m_twtguardtime,&WifiMac::NotifyTWTSleep,this);
+      Simulator::Schedule(m_twtperiodicity,&StaWifiMac::ScheduleTWT,this);
+    }
+}
+
+
+void
+StaWifiMac::UpdateTWTConfig(bool twtenabled, Time twtstarttime, Time twtoffset, Time twtduration, Time twtperiodicity, Time twtguardtime) {
+    NS_LOG_FUNCTION (this);
+    if(twtenabled){
+      m_twtstarttime = twtstarttime;
+      m_twtoffset = twtoffset;
+      m_twtduration = twtduration;
+      m_twtperiodicity = twtperiodicity;
+      m_twtguardtime = twtguardtime;
+    }
+    return;
 }
 
 } //namespace ns3
