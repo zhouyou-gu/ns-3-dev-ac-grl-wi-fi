@@ -324,6 +324,7 @@ main (int argc, char *argv[])
   NetDeviceContainer staDevice = wifi.Install (wifiPhy, wifiMac, sta_nodes);
 
   // Configure STA devices' settings
+  Time twtperiod = MicroSeconds(10000);
   for (uint32_t j = 0; j < n_sta; j++)
     {
       auto m = staDevice.Get (j);
@@ -333,6 +334,7 @@ main (int argc, char *argv[])
       v->SetTxPowerEnd (0.0);
       auto z = DynamicCast<StaWifiMac> (w->GetMac ());
       z->GetTxop ()->GetWifiMacQueue ()->SetMaxSize (QueueSize ("1p"));
+      z->GetTxop ()->GetWifiMacQueue ()->SetMaxDelay(twtperiod);
       // No need to scan the channel as we are manually associating the sta
       // z->SetAttribute ("scanningstartoffset", TimeValue (MilliSeconds (100) * (j + 1)));
     }
@@ -346,7 +348,7 @@ main (int argc, char *argv[])
       v->SetAttribute("twtstarttime", TimeValue(Seconds(time_for_test_start)));
       v->SetAttribute("twtoffset", TimeValue(MicroSeconds((i % 10) * 1000)));
       v->SetAttribute("twtduration", TimeValue(MicroSeconds(1000)));
-      v->SetAttribute("twtperiodicity", TimeValue(MicroSeconds(10000)));
+      v->SetAttribute("twtperiodicity", TimeValue(twtperiod));
       }
 
   // Set up tracing if verbose
