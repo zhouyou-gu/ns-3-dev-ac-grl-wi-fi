@@ -222,8 +222,9 @@ public:
    */
   bool IsBusy (void) const;
 
-    void NotifyTWTSleep();
-    void NotifyTWTAwake();
+  void NotifyTWTSleep ();
+  void NotifyTWTAwake ();
+  bool IsSleep (void);
 
 protected:
   void DoDispose (void) override;

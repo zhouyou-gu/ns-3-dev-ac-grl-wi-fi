@@ -793,6 +793,14 @@ FrameExchangeManager::NormalAckTimeout (Ptr<WifiMacQueueItem> mpdu, const WifiTx
       m_mac->GetWifiRemoteStationManager ()->ReportFinalDataFailed (mpdu);
       m_dcf->ResetCw ();
     }
+  else if(m_channelAccessManager->IsSleep()){
+      NS_LOG_DEBUG ("Device is in sleeping state, discard MPDU");
+      NotifyPacketDiscarded (mpdu);
+      // Dequeue the MPDU if it is stored in a queue
+      DequeueMpdu (mpdu);
+      m_mac->GetWifiRemoteStationManager ()->ReportFinalDataFailed (mpdu);
+      m_dcf->ResetCw ();
+  }
   else
     {
       NS_LOG_DEBUG ("Missed Ack, retransmit MPDU");

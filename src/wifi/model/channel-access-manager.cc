@@ -859,6 +859,10 @@ ChannelAccessManager::NotifyTWTAwake() {
         txop->NotifyWakeUp ();
       }
 }
+bool
+ChannelAccessManager::IsSleep(void) {
+  return m_sleeping || m_TWTSleeping;
+}
 
 
 } //namespace ns3
