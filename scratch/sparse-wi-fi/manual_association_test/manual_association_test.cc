@@ -164,7 +164,7 @@ main (int argc, char *argv[])
   uint32_t interval_in_us = 20000; // Interval between packets in microseconds
 
   int n_ap = 1; // Number of Access Points (APs)
-  int n_sta = 2; // Number of Stations (STAs
+  int n_sta = 1; // Number of Stations (STAs
 
   float CcaEdThreshold = -95.0;
   float RxNoiseFigure = 10.0;
@@ -310,17 +310,16 @@ main (int argc, char *argv[])
 
   // Note: The variable 'twt_start_time' is used but not defined in the original code.
   // Ensure it is defined if you intend to use it.
-  /*
-    for (int i = 0; i < n_sta; i++) {
-        auto m = staDevice.Get(i);
-        auto w = m->GetObject<WifiNetDevice>();
-        auto v = DynamicCast<StaWifiMac>(w->GetMac());
-        v->SetAttribute("twtstarttime", TimeValue(MicroSeconds(twt_start_time * 1000000)));
-        v->SetAttribute("twtoffset", TimeValue(MicroSeconds((i % 4) * 10000)));
-        v->SetAttribute("twtduration", TimeValue(MicroSeconds(10000)));
-        v->SetAttribute("twtperiodicity", TimeValue(MicroSeconds(40000)));
-    }
-    */
+  // for (int i = 0; i < n_sta; i++) {
+  //     auto m = staDevice.Get(i);
+  //     auto w = m->GetObject<WifiNetDevice>();
+  //     auto v = DynamicCast<StaWifiMac>(w->GetMac());
+  //     v->SetAttribute("twtenabled", BooleanValue(true));
+  //     v->SetAttribute("twtstarttime", TimeValue(MicroSeconds(0 * 1000000)));
+  //     v->SetAttribute("twtoffset", TimeValue(MicroSeconds((i % 4) * 10000)));
+  //     v->SetAttribute("twtduration", TimeValue(MicroSeconds(10000)));
+  //     v->SetAttribute("twtperiodicity", TimeValue(MicroSeconds(40000)));
+  //     }
 
   // Set up tracing if verbose
   if (verbose)

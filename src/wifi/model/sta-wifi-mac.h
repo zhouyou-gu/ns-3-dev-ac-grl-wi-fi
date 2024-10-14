@@ -347,10 +347,12 @@ private:
   // candidate vector should not be too large.
 
   Time m_scanningstartoffset; ///< m_scanningstartoffset
+  bool m_twtenabled; ///< m_twtenabled
   Time m_twtstarttime; ///< m_twtstarttime
   Time m_twtoffset; ///< m_twtoffset
   Time m_twtduration; ///< m_twtduration
   Time m_twtperiodicity; ///< m_twtperiodicity
+  Time m_twtguardtime; ///< m_twtguardtime
 
   TracedCallback<Mac48Address> m_assocLogger;   ///< association logger
   TracedCallback<Mac48Address> m_deAssocLogger; ///< disassociation logger

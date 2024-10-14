@@ -72,6 +72,11 @@ StaWifiMac::GetTypeId (void)
                    BooleanValue (false),
                    MakeBooleanAccessor (&StaWifiMac::SetActiveProbing, &StaWifiMac::GetActiveProbing),
                    MakeBooleanChecker ())
+    .AddAttribute ("twtenabled",
+                  "twtenabled",
+                  BooleanValue (false),
+                  MakeBooleanAccessor (&StaWifiMac::m_twtenabled),
+                                    MakeBooleanChecker ())
     .AddAttribute ("twtstarttime",
                   "twtstarttime",
                  TimeValue (MilliSeconds (0)),
@@ -91,6 +96,11 @@ StaWifiMac::GetTypeId (void)
                     "twtperiodicity",
                    TimeValue (MilliSeconds (0)),
                    MakeTimeAccessor (&StaWifiMac::m_twtperiodicity),
+                                      MakeTimeChecker ())
+    .AddAttribute ("twtguardtime",
+                    "twtguardtime",
+                   TimeValue (MilliSeconds (0)),
+                   MakeTimeAccessor (&StaWifiMac::m_twtguardtime),
                                       MakeTimeChecker ())
     .AddAttribute ("scanningstartoffset",
                  "scanningstartoffset",
@@ -136,7 +146,6 @@ StaWifiMac::DoInitialize (void)
     }
     else{
       NS_LOG_DEBUG ("Manually assocated, no need to scan");
-
     }
   StartTWT ();
 }
@@ -1289,9 +1298,7 @@ StaWifiMac::NotifyChannelSwitching (void)
 void
 StaWifiMac::StartTWT(void) {
     NS_LOG_FUNCTION (this);
-    if(m_twtduration.IsStrictlyPositive()){
-//        NS_LOG_UNCOND("start twt");
-        Simulator::Schedule(m_twtstarttime-Seconds(0.1),&WifiMac::NotifyTWTSleep,this);
+    if(m_twtduration.IsStrictlyPositive() and m_twtenabled){
         Simulator::Schedule(m_twtstarttime,&StaWifiMac::ScheduleTWT,this);
     }
 }
@@ -1300,7 +1307,7 @@ void
 StaWifiMac::ScheduleTWT(void) {
     NS_LOG_FUNCTION (this);
     Simulator::Schedule(m_twtoffset,&WifiMac::NotifyTWTAwake,this);
-    Simulator::Schedule(m_twtoffset+m_twtduration,&WifiMac::NotifyTWTSleep,this);
+    Simulator::Schedule(m_twtoffset+m_twtduration-m_twtguardtime,&WifiMac::NotifyTWTSleep,this);
     Simulator::Schedule(m_twtperiodicity,&StaWifiMac::ScheduleTWT,this);
 }
 
