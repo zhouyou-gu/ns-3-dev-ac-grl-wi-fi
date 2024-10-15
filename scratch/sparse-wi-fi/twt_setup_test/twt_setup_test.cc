@@ -572,7 +572,7 @@ main (int argc, char *argv[])
               max_mode = mode;
             }
         }
-      //164 bytes payload is approximately with 120 us with the lowest data rate 6mbps
+      //164 bytes payload is approximately with 224 us with the lowest data rate 6mbps
       //164 bytes payload is approximately with 28 us with the highest data rate 54mbps
       //preamble and header duration is 20 us
 
