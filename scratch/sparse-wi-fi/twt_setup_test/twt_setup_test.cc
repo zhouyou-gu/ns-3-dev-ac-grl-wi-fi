@@ -170,8 +170,8 @@ main (int argc, char *argv[])
   int n_sta = 1; // Number of Stations (STAs
 
   float TxPower = 0.;
+  float RxNoiseFigure = 5.0;
   float CcaEdThreshold = -95.0;
-  float RxNoiseFigure = 10.0;
   float RxSensitivity = -95.0;
   float PreambleDetectionThresholdMinimumRssi = -95.0;
 
@@ -191,8 +191,8 @@ main (int argc, char *argv[])
   cmd.AddValue ("simSeed", "Seed for random generator. Default: 1", simSeed);
   cmd.AddValue ("simTime", "simulation time", simTime);
   cmd.AddValue ("TxPower", "TxPower", TxPower);
-  cmd.AddValue ("CcaEdThreshold", "CcaEdThreshold", CcaEdThreshold);
   cmd.AddValue ("RxNoiseFigure", "RxNoiseFigure", RxNoiseFigure);
+  cmd.AddValue ("CcaEdThreshold", "CcaEdThreshold", CcaEdThreshold);
   cmd.AddValue ("RxSensitivity", "RxSensitivity", RxSensitivity);
   cmd.AddValue ("PreambleDetectionThresholdMinimumRssi", "PreambleDetectionThresholdMinimumRssi",
                 PreambleDetectionThresholdMinimumRssi);
@@ -219,8 +219,8 @@ main (int argc, char *argv[])
   std::cout << "simSeed:" << simSeed << std::endl;
   std::cout << "simTime:" << simTime << std::endl;
   std::cout << "TxPower:" << TxPower << std::endl;
-  std::cout << "CcaEdThreshold:" << CcaEdThreshold << std::endl;
   std::cout << "RxNoiseFigure:" << RxNoiseFigure << std::endl;
+  std::cout << "CcaEdThreshold:" << CcaEdThreshold << std::endl;
   std::cout << "RxSensitivity:" << RxSensitivity << std::endl;
   std::cout << "PreambleDetectionThresholdMinimumRssi:" << PreambleDetectionThresholdMinimumRssi
             << std::endl;
