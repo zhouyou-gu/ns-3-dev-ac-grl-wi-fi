@@ -299,9 +299,8 @@ main (int argc, char *argv[])
   // Set up MAC and disable rate control
   WifiMacHelper wifiMac;
   wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager", "DataMode", StringValue (phyMode),
-                                "ControlMode", StringValue (phyMode),
-                                "MaxSsrc", UintegerValue (MaxNumRetx),
-                                "MaxSlrc", UintegerValue (MaxNumRetx));
+                                "ControlMode", StringValue (phyMode), "MaxSsrc",
+                                UintegerValue (MaxNumRetx), "MaxSlrc", UintegerValue (MaxNumRetx));
 
   // Set up the rest of the MAC
   Ssid ssid = Ssid ("wifi-default");
@@ -331,31 +330,32 @@ main (int argc, char *argv[])
   NetDeviceContainer staDevice = wifi.Install (wifiPhy, wifiMac, sta_nodes);
 
   // Configure STA devices' settings
-  Time twtperiod = MicroSeconds(10000);
+  Time twtperiod = MicroSeconds (10000);
   for (uint32_t j = 0; j < n_sta; j++)
     {
       auto m = staDevice.Get (j);
       auto w = m->GetObject<WifiNetDevice> ();
       auto z = DynamicCast<StaWifiMac> (w->GetMac ());
       z->GetTxop ()->GetWifiMacQueue ()->SetMaxSize (QueueSize ("1p"));
-      z->GetTxop ()->GetWifiMacQueue ()->SetMaxDelay(twtperiod);
-      z->GetTxop ()->SetMinCw(15);
-      z->GetTxop ()->SetMaxCw(127);
+      z->GetTxop ()->GetWifiMacQueue ()->SetMaxDelay (twtperiod);
+      z->GetTxop ()->SetMinCw (15);
+      z->GetTxop ()->SetMaxCw (127);
       // No need to scan the channel as we are manually associating the sta
       // z->SetAttribute ("scanningstartoffset", TimeValue (MilliSeconds (100) * (j + 1)));
     }
 
   // Note: The variable 'twt_start_time' is used but not defined in the original code.
-  for (int i = 0; i < n_sta; i++) {
-      auto m = staDevice.Get(i);
-      auto w = m->GetObject<WifiNetDevice>();
-      auto v = DynamicCast<StaWifiMac>(w->GetMac());
-      v->SetAttribute("twtenabled", BooleanValue(true));
-      v->SetAttribute("twtstarttime", TimeValue(Seconds(time_for_test_start)));
-      v->SetAttribute("twtoffset", TimeValue(MicroSeconds((i % 10) * 1000)));
-      v->SetAttribute("twtduration", TimeValue(MicroSeconds(1000)));
-      v->SetAttribute("twtperiodicity", TimeValue(twtperiod));
-      }
+  for (int i = 0; i < n_sta; i++)
+    {
+      auto m = staDevice.Get (i);
+      auto w = m->GetObject<WifiNetDevice> ();
+      auto v = DynamicCast<StaWifiMac> (w->GetMac ());
+      v->SetAttribute ("twtenabled", BooleanValue (true));
+      v->SetAttribute ("twtstarttime", TimeValue (Seconds (time_for_test_start)));
+      v->SetAttribute ("twtoffset", TimeValue (MicroSeconds ((i % 10) * 1000)));
+      v->SetAttribute ("twtduration", TimeValue (MicroSeconds (1000)));
+      v->SetAttribute ("twtperiodicity", TimeValue (twtperiod));
+    }
 
   // Set up tracing if verbose
   if (verbose)
@@ -441,8 +441,8 @@ main (int argc, char *argv[])
       uint16_t port = i + port_off_set;
       Ptr<UdpServer> r = CreateObject<UdpServer> ();
       r->SetAttribute ("Port", UintegerValue (port));
-      r->SetStartTime (Seconds (time_for_test_start-mini_application_time_pad_second));
-      r->SetStopTime (Seconds (time_for_test_end+mini_application_time_pad_second));
+      r->SetStartTime (Seconds (time_for_test_start - mini_application_time_pad_second));
+      r->SetStopTime (Seconds (time_for_test_end + mini_application_time_pad_second));
       server_node.Get (0)->AddApplication (r);
       ServerApps.Add (r);
     }
@@ -457,8 +457,8 @@ main (int argc, char *argv[])
       s->SetAttribute ("MaxPackets", UintegerValue (numPackets));
       s->SetAttribute ("Interval", TimeValue (interval));
       s->SetAttribute ("PacketSize", UintegerValue (packetSize));
-      s->SetStartTime (Seconds (time_for_test_start-mini_application_time_pad_second));
-      s->SetStopTime (Seconds (time_for_test_end+mini_application_time_pad_second));
+      s->SetStartTime (Seconds (time_for_test_start - mini_application_time_pad_second));
+      s->SetStopTime (Seconds (time_for_test_end + mini_application_time_pad_second));
       sta_nodes.Get (i)->AddApplication (s);
     }
 
@@ -552,17 +552,18 @@ main (int argc, char *argv[])
       Ptr<PpvErrorRateModel> ppv = CreateObject<PpvErrorRateModel> ();
       double pw = v->GetTxPowerStart ();
       std::string max_mode_name ("OfdmRate6Mbps");
-      auto max_mode = WifiMode(max_mode_name);
-      uint64_t max_rate = OfdmPhy::GetDataRate (max_mode.GetUniqueName (), bw);;
+      auto max_mode = WifiMode (max_mode_name);
+      uint64_t max_rate = OfdmPhy::GetDataRate (max_mode.GetUniqueName (), bw);
+      ;
       auto bps_array = s_ofdmRatesBpsList[bw];
       for (const auto &bps : bps_array)
         {
           auto mode = OfdmPhy::GetOfdmRate (bps, bw);
           txVector.SetMode (mode);
           txVector.SetChannelWidth (bw);
-          double ps = ppv->GetChunkSuccessRate (
-              mode, txVector, DbToRatio(pw + max_gain - WToDbm (noiseFloor)),
-              (packetSize + UDP_IP_WIFI_HEADER_SIZE) * 8);
+          double ps = ppv->GetChunkSuccessRate (mode, txVector,
+                                                DbToRatio (pw + max_gain - WToDbm (noiseFloor)),
+                                                (packetSize + UDP_IP_WIFI_HEADER_SIZE) * 8);
           uint64_t rate = OfdmPhy::GetDataRate (mode.GetUniqueName (), bw);
           if (rate >= max_rate && ps > (1.0 - 1e-5))
             {
@@ -577,17 +578,21 @@ main (int argc, char *argv[])
 
       auto a = DynamicCast<StaWifiMac> (w->GetMac ());
       a->GetWifiRemoteStationManager ()->SetAttribute ("DataMode", StringValue (max_mode_name));
-      auto preambleDuration_us = v->CalculatePhyPreambleAndHeaderDuration(txVector).GetMicroSeconds();
-      auto payloadsDuration_us = v->GetPayloadDuration((packetSize + UDP_IP_WIFI_HEADER_SIZE),txVector,v->GetPhyBand()).GetMicroSeconds();
+      auto preambleDuration_us =
+          v->CalculatePhyPreambleAndHeaderDuration (txVector).GetMicroSeconds ();
+      auto payloadsDuration_us =
+          v->GetPayloadDuration ((packetSize + UDP_IP_WIFI_HEADER_SIZE), txVector, v->GetPhyBand ())
+              .GetMicroSeconds ();
 
       std::cout << "STA:" << j << "-" << "AP:" << max_ap_ind << ", Gain: " << max_gain
-                << "\n\t\t noiseFloor:" << WToDbm (noiseFloor) << ", snr:" << pw + max_gain - WToDbm (noiseFloor)
+                << "\n\t\t noiseFloor:" << WToDbm (noiseFloor)
+                << ", snr:" << pw + max_gain - WToDbm (noiseFloor)
                 << "\n\t\t phyMode:" << max_mode_name
-                << "\n\t\t tx data duration:" <<  payloadsDuration_us
-                << "\n\t\t tx preamble duration:" << preambleDuration_us
-                << std::endl;
+                << "\n\t\t tx data duration:" << payloadsDuration_us
+                << "\n\t\t tx preamble duration:" << preambleDuration_us << std::endl;
 
-      a->SetAttribute("twtguardtime",TimeValue(MicroSeconds(preambleDuration_us+payloadsDuration_us)));
+      a->SetAttribute ("twtguardtime",
+                       TimeValue (MicroSeconds (preambleDuration_us + payloadsDuration_us)));
     }
 
   // Manually associate STA-AP
