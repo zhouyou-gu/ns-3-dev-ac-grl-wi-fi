@@ -268,7 +268,7 @@ InterferenceHelper::GetEnergyDuration (double energyW, WifiSpectrumBand band)
     {
       double noiseInterferenceW = i->second.GetPower ();
       end = i->first;
-      NS_LOG_FUNCTION (this << noiseInterferenceW << " - " << energyW);
+      NS_LOG_FUNCTION (this << noiseInterferenceW << " - " << WToDbm(energyW));
       if (noiseInterferenceW < energyW)
         {
           break;

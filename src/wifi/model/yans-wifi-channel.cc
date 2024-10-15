@@ -133,7 +133,7 @@ YansWifiChannel::Receive (Ptr<YansWifiPhy> phy, Ptr<WifiPpdu> ppdu, double rxPow
       NS_LOG_WARN("Received signal too weak to process: " << rxPowerDbm << " dBm");
       return;
     }
-  NS_LOG_WARN("Received signal: " << rxPowerDbm + phy->GetRxGain () << " dBm");
+  NS_LOG_WARN("YansWifiChannel: Received signal: " << rxPowerDbm + phy->GetRxGain () << " dBm, " << "RxSensitivity:" << phy->GetRxSensitivity () << "dBm");
   RxPowerWattPerChannelBand rxPowerW;
   rxPowerW.insert ({std::make_pair (0, 0), (DbmToW (rxPowerDbm + phy->GetRxGain ()))}); //dummy band for YANS
   phy->StartReceivePreamble (ppdu, rxPowerW, ppdu->GetTxDuration ());

@@ -351,6 +351,7 @@ SpectrumWifiPhy::StartRx (Ptr<SpectrumSignalParameters> rxParams)
       SwitchMaybeToCcaBusy (GetMeasurementChannelWidth (wifiRxParams->ppdu));
       return;
     }
+  NS_LOG_WARN("SpectrumWifiPhy: Received signal: " << WToDbm(totalRxPowerW) + GetRxGain () << " dBm, " << "RxSensitivity:" << GetRxSensitivity ());
 
   // Unless we are receiving a TB PPDU, do not sync with this signal if the PPDU
   // does not overlap with the receiver's primary20 channel

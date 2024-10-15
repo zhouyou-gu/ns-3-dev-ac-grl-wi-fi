@@ -156,17 +156,20 @@ main (int argc, char *argv[])
   LogComponentEnable ("wifi-test", LOG_LEVEL_INFO);
   //   LogComponentEnable ("StaWifiMac", LOG_LEVEL_ALL);
   //   LogComponentEnable ("ApWifiMac", LOG_LEVEL_ALL);
+  LogComponentEnable ("InterferenceHelper", LOG_LEVEL_ALL);
+  LogComponentEnable ("YansWifiPhy", LOG_LEVEL_ALL);
 
   // Simulation parameters
   uint32_t MaxNumRetx = 5;
   std::string phyMode ("OfdmRate6Mbps");
   uint32_t packetSize = 100; // Packet size in bytes
-  uint32_t numPackets = 100; // Number of packets to send
+  uint32_t numPackets = 5; // Number of packets to send
   uint32_t interval_in_us = 10000; // Interval between packets in microseconds
 
   int n_ap = 1; // Number of Access Points (APs)
   int n_sta = 1; // Number of Stations (STAs
 
+  float TxPower = 0.;
   float CcaEdThreshold = -95.0;
   float RxNoiseFigure = 10.0;
   float RxSensitivity = -95.0;
@@ -187,6 +190,7 @@ main (int argc, char *argv[])
   cmd.AddValue ("n_sta", "number of stations", n_sta);
   cmd.AddValue ("simSeed", "Seed for random generator. Default: 1", simSeed);
   cmd.AddValue ("simTime", "simulation time", simTime);
+  cmd.AddValue ("TxPower", "TxPower", TxPower);
   cmd.AddValue ("CcaEdThreshold", "CcaEdThreshold", CcaEdThreshold);
   cmd.AddValue ("RxNoiseFigure", "RxNoiseFigure", RxNoiseFigure);
   cmd.AddValue ("RxSensitivity", "RxSensitivity", RxSensitivity);
@@ -214,6 +218,7 @@ main (int argc, char *argv[])
   std::cout << "n_sta:" << n_sta << std::endl;
   std::cout << "simSeed:" << simSeed << std::endl;
   std::cout << "simTime:" << simTime << std::endl;
+  std::cout << "TxPower:" << TxPower << std::endl;
   std::cout << "CcaEdThreshold:" << CcaEdThreshold << std::endl;
   std::cout << "RxNoiseFigure:" << RxNoiseFigure << std::endl;
   std::cout << "RxSensitivity:" << RxSensitivity << std::endl;
@@ -267,13 +272,15 @@ main (int argc, char *argv[])
   // Set up Wi-Fi devices
   WifiHelper wifi;
   wifi.SetStandard (ns3::WIFI_STANDARD_80211a); // Set Wi-Fi standard to 802.11ah
-  //   wifi.EnableLogComponents (); // Turn on all Wifi logging
+  wifi.EnableLogComponents (); // Turn on all Wifi logging
 
   YansWifiPhyHelper wifiPhy;
   wifiPhy.Set ("ChannelSettings", StringValue ("{161, 20, BAND_5GHZ, 0}"));
   wifiPhy.Set ("CcaEdThreshold", DoubleValue (CcaEdThreshold));
   wifiPhy.Set ("RxNoiseFigure", DoubleValue (RxNoiseFigure));
   wifiPhy.Set ("RxSensitivity", DoubleValue (RxSensitivity));
+  wifiPhy.Set ("TxPowerEnd", DoubleValue (TxPower));
+  wifiPhy.Set ("TxPowerStart", DoubleValue (TxPower));
   wifiPhy.SetPreambleDetectionModel ("ns3::ThresholdPreambleDetectionModel", "MinimumRssi",
                                      DoubleValue (PreambleDetectionThresholdMinimumRssi));
   wifiPhy.SetPcapDataLinkType (WifiPhyHelper::DLT_IEEE802_11_RADIO);
@@ -329,9 +336,8 @@ main (int argc, char *argv[])
     {
       auto m = staDevice.Get (j);
       auto w = m->GetObject<WifiNetDevice> ();
-      auto v = DynamicCast<WifiPhy> (w->GetPhy ());
-      v->SetTxPowerStart (0.0);
-      v->SetTxPowerEnd (0.0);
+      // v->SetTxPowerStart (0.0);
+      // v->SetTxPowerEnd (0.0);
       auto z = DynamicCast<StaWifiMac> (w->GetMac ());
       z->GetTxop ()->GetWifiMacQueue ()->SetMaxSize (QueueSize ("1p"));
       z->GetTxop ()->GetWifiMacQueue ()->SetMaxDelay(twtperiod);
@@ -566,13 +572,13 @@ main (int argc, char *argv[])
             }
         }
       //164 bytes payload is approximately with 120 us with the lowest data rate 6mbps
-      //164 bytes payload is approximately with 20 us with the highest data rate 54mbps
+      //164 bytes payload is approximately with 28 us with the highest data rate 54mbps
       //preamble and header duration is 20 us
 
       auto a = DynamicCast<StaWifiMac> (w->GetMac ());
       a->GetWifiRemoteStationManager ()->SetAttribute ("DataMode", StringValue (max_mode_name));
-      auto preambleDuration_us =  1e6 * v->CalculatePhyPreambleAndHeaderDuration(txVector).GetSeconds();
-      auto payloadsDuration_us =  1e6 * ((double) (packetSize + UDP_IP_WIFI_HEADER_SIZE) * 8)/((double) max_mode.GetPhyRate (txVector));
+      auto preambleDuration_us = v->CalculatePhyPreambleAndHeaderDuration(txVector).GetMicroSeconds();
+      auto payloadsDuration_us = v->GetPayloadDuration((packetSize + UDP_IP_WIFI_HEADER_SIZE),txVector,v->GetPhyBand()).GetMicroSeconds();
 
       std::cout << "STA:" << j << "-" << "AP:" << max_ap_ind << ", Gain: " << max_gain
                 << "\n\t\t noiseFloor:" << WToDbm (noiseFloor) << ", snr:" << pw + max_gain - WToDbm (noiseFloor)
