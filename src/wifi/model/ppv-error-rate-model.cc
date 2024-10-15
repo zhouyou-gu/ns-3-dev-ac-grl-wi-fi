@@ -17,7 +17,22 @@ PpvErrorRateModel::GetTypeId (void)
   static TypeId tid = TypeId ("ns3::PpvErrorRateModel")
     .SetParent<ErrorRateModel> ()
     .SetGroupName ("Wifi")
-    .AddConstructor<PpvErrorRateModel> ()
+    .AddConstructor<PpvErrorRateModel> ()    
+    .AddAttribute ("symbolDuration",
+                  "The duration of each symbol.",
+                  TimeValue (MicroSeconds (4)),
+                  MakeTimeAccessor (&PpvErrorRateModel::m_symbolDuration),
+                  MakeTimeChecker ())
+    .AddAttribute ("signalExtension",
+                  "signalExtension.",
+                  TimeValue (MicroSeconds (0)),
+                  MakeTimeAccessor (&PpvErrorRateModel::m_signalExtension),
+                  MakeTimeChecker ())
+    .AddAttribute ("NumberServiceBits",
+                  "NumberServiceBits.",
+                  UintegerValue(16),
+                  MakeUintegerAccessor (&PpvErrorRateModel::m_NumberServiceBits),
+                  MakeUintegerChecker<uint16_t> ())
   ;
   return tid;
 }
@@ -33,8 +48,22 @@ PpvErrorRateModel::DoGetChunkSuccessRate (WifiMode mode, const WifiTxVector &txV
 {
   NS_LOG_FUNCTION (this << mode << txVector << snr << nbits << +numRxAntennas << field << staId);
   uint64_t phyRate = mode.GetPhyRate (txVector, staId);
-  double B = txVector.GetChannelWidth () * 20e6;
-  double D = ((double) nbits) / ((double) phyRate);
+  double B = txVector.GetChannelWidth () * 1e6; //convert to MHz
+
+  //(Section 17.3.2.4 "Timing related parameters" Table 17-5 "Timing-related parameters"; IEEE Std 802.11-2016
+  //corresponds to T_{SYM} in the table)
+
+  double numDataBitsPerSymbol = txVector.GetMode ().GetDataRate (txVector) * m_symbolDuration.GetNanoSeconds () / 1e9;
+
+  //The number of OFDM symbols in the data field when BCC encoding
+  //is used is given in equation 19-32 of the IEEE 802.11-2016 standard.
+  double numSymbols = lrint (ceil ((m_NumberServiceBits + nbits + 6.0)/ (numDataBitsPerSymbol)));
+
+  Time payloadDuration = FemtoSeconds (static_cast<uint64_t> (numSymbols * m_symbolDuration.GetFemtoSeconds ()));
+  payloadDuration += m_signalExtension;
+
+
+  double D = payloadDuration.GetSeconds();
   if (B == 0)
     {
       B = 20e6;
@@ -48,8 +77,14 @@ PpvErrorRateModel::DoGetChunkSuccessRate (WifiMode mode, const WifiTxVector &txV
   double nu = -(double) (nbits) *log (2) + D * B * log (1 + snr);
   double de = sqrt (D * B * cd);
   double error = 1. / 2. * erfc (nu / de / sqrt (2));
-  NS_LOG_FUNCTION (this << "bandwidth:" << B << ", nbits:" << nbits << ", phyRate:" << phyRate
-                        << ", error:" << error);
+
+  NS_LOG_FUNCTION (this << "ppv bound BLER" 
+                    << ", D:" << D
+                    << ", B:" << B
+                    << ", snr:" << snr
+                    << ", nbits:" << nbits
+                    << ", phyRate:" << phyRate
+                    << ", error:" << error);
 
   // NS_LOG_UNCOND (error << ",  " << Simulator::Now ().GetMicroSeconds () << ", " << nbits);
   // NS_LOG_UNCOND (cd << "," << nu << "," << de << "," << error << "," << cd << ",");

@@ -156,20 +156,20 @@ main (int argc, char *argv[])
   LogComponentEnable ("wifi-test", LOG_LEVEL_INFO);
   //   LogComponentEnable ("StaWifiMac", LOG_LEVEL_ALL);
   //   LogComponentEnable ("ApWifiMac", LOG_LEVEL_ALL);
-  LogComponentEnable ("InterferenceHelper", LOG_LEVEL_ALL);
-  LogComponentEnable ("YansWifiPhy", LOG_LEVEL_ALL);
+  //   LogComponentEnable ("InterferenceHelper", LOG_LEVEL_ALL);
+  //   LogComponentEnable ("YansWifiPhy", LOG_LEVEL_ALL);
 
   // Simulation parameters
   uint32_t MaxNumRetx = 5;
   std::string phyMode ("OfdmRate6Mbps");
-  uint32_t packetSize = 100; // Packet size in bytes
+  uint32_t packetSize = 100 - UDP_IP_WIFI_HEADER_SIZE; // Packet size in bytes
   uint32_t numPackets = 5; // Number of packets to send
   uint32_t interval_in_us = 10000; // Interval between packets in microseconds
 
   int n_ap = 1; // Number of Access Points (APs)
   int n_sta = 1; // Number of Stations (STAs
 
-  float TxPower = 0.;
+  float TxPower = 5.;
   float RxNoiseFigure = 5.0;
   float CcaEdThreshold = -95.0;
   float RxSensitivity = -95.0;
@@ -272,7 +272,7 @@ main (int argc, char *argv[])
   // Set up Wi-Fi devices
   WifiHelper wifi;
   wifi.SetStandard (ns3::WIFI_STANDARD_80211a); // Set Wi-Fi standard to 802.11ah
-  wifi.EnableLogComponents (); // Turn on all Wifi logging
+  //   wifi.EnableLogComponents (); // Turn on all Wifi logging
 
   YansWifiPhyHelper wifiPhy;
   wifiPhy.Set ("ChannelSettings", StringValue ("{161, 20, BAND_5GHZ, 0}"));
@@ -344,199 +344,58 @@ main (int argc, char *argv[])
       // z->SetAttribute ("scanningstartoffset", TimeValue (MilliSeconds (100) * (j + 1)));
     }
 
-  // Note: The variable 'twt_start_time' is used but not defined in the original code.
-  for (int i = 0; i < n_sta; i++)
-    {
-      auto m = staDevice.Get (i);
-      auto w = m->GetObject<WifiNetDevice> ();
-      auto v = DynamicCast<StaWifiMac> (w->GetMac ());
-      v->SetAttribute ("twtenabled", BooleanValue (true));
-      v->SetAttribute ("twtstarttime", TimeValue (Seconds (time_for_test_start)));
-      v->SetAttribute ("twtoffset", TimeValue (MicroSeconds ((i % 10) * 1000)));
-      v->SetAttribute ("twtduration", TimeValue (MicroSeconds (1000)));
-      v->SetAttribute ("twtperiodicity", TimeValue (twtperiod));
-    }
-
-  // Set up tracing if verbose
-  if (verbose)
-    {
-      for (uint32_t i = 0; i < n_sta; i++)
-        {
-          auto m = staDevice.Get (i);
-          auto w = m->GetObject<WifiNetDevice> ();
-          auto v = DynamicCast<WifiPhy> (w->GetPhy ());
-          v->TraceConnectWithoutContext ("PhyTxBegin", MakeCallback (&cb_tx_start));
-          v->TraceConnectWithoutContext ("PhyTxEnd", MakeCallback (&cb_tx_ended));
-        }
-      for (uint32_t i = 0; i < n_sta; i++)
-        {
-          auto m = staDevice.Get (i);
-          auto w = m->GetObject<WifiNetDevice> ();
-          auto v = w->GetMac ();
-          v->TraceConnectWithoutContext ("MacTx", MakeCallback (&cb_tx_succ));
-          v->TraceConnectWithoutContext ("MacTxDrop", MakeCallback (&cb_tx_drop));
-          v->TraceConnectWithoutContext ("MacRx", MakeCallback (&cb_rx_succ));
-          v->TraceConnectWithoutContext ("MacRxDrop", MakeCallback (&cb_rx_drop));
-        }
-      for (int i = 0; i < n_ap; ++i)
-        {
-          auto m = apDevice.Get (i);
-          auto w = m->GetObject<WifiNetDevice> ();
-          auto v = w->GetMac ();
-          v->TraceConnectWithoutContext ("MacTx", MakeCallback (&cb_tx_succ));
-          v->TraceConnectWithoutContext ("MacTxDrop", MakeCallback (&cb_tx_drop));
-          v->TraceConnectWithoutContext ("MacRx", MakeCallback (&cb_rx_succ));
-          v->TraceConnectWithoutContext ("MacRxDrop", MakeCallback (&cb_rx_drop));
-        }
-    }
-
-  // Set up Point-to-Point (P2P) links between server and gateway
-  PointToPointHelper p2p;
-  p2p.SetDeviceAttribute ("DataRate", StringValue ("100Gbps"));
-  p2p.SetChannelAttribute ("Delay", StringValue ("0ms"));
-  Ipv4AddressHelper server_address;
-  server_address.SetBase ("10.1.0.0", "255.255.0.0");
-  auto server_to_gate_netd = p2p.Install (server_node.Get (0), gate_node.Get (0));
-  auto server_to_gate_intf = server_address.Assign (server_to_gate_netd);
-
-  // Set up P2P links between gateway and APs
-  NetDeviceContainer p2p_ap_to_gate;
-  Ipv4InterfaceContainer if_ap_to_gate;
-  for (int i = 0; i < n_ap; ++i)
-    {
-      std::stringstream a;
-      a << "" << 11 << "." << i + 1 << ".0.0";
-      std::cout << "ap base: " << i << " " << a.str () << " " << Ipv4Address (a.str ().c_str ())
-                << std::endl;
-      Ipv4AddressHelper p2p_address;
-      p2p_address.SetBase (a.str ().c_str (), "255.255.0.0");
-      auto d = p2p.Install (gate_node.Get (0), ap_nodes.Get (i));
-      auto interface = p2p_address.Assign (d);
-      p2p_ap_to_gate.Add (d.Get (1));
-      if_ap_to_gate.Add (interface.Get (1));
-    }
-
-  // Assign IP addresses to AP interfaces
-  Ipv4InterfaceContainer apInterface;
-  for (int i = 0; i < n_ap; ++i)
-    {
-      Ipv4AddressHelper ap_address;
-      ap_address.SetBase ("10.2.0.0", "255.255.0.0");
-      auto a = ap_address.Assign (apDevice.Get (i));
-      apInterface.Add (a);
-    }
-
-  // Assign IP addresses to STA interfaces
-  Ipv4AddressHelper sta_address;
-  sta_address.SetBase ("10.3.0.0", "255.255.0.0");
-  Ipv4InterfaceContainer staInterface = sta_address.Assign (staDevice);
-
-  uint16_t port_off_set = 1000;
-  ApplicationContainer ServerApps;
-
-  double mini_application_time_pad_second = 1e-5;
-  // Install UDP Server applications on the server node
-  for (int i = 0; i < n_sta; ++i)
-    {
-      uint16_t port = i + port_off_set;
-      Ptr<UdpServer> r = CreateObject<UdpServer> ();
-      r->SetAttribute ("Port", UintegerValue (port));
-      r->SetStartTime (Seconds (time_for_test_start - mini_application_time_pad_second));
-      r->SetStopTime (Seconds (time_for_test_end + mini_application_time_pad_second));
-      server_node.Get (0)->AddApplication (r);
-      ServerApps.Add (r);
-    }
-
-  // Install UDP Client applications on the STA nodes
-  for (int i = 0; i < n_sta; ++i)
-    {
-      uint16_t port = i + port_off_set;
-      Ptr<UdpClient> s = CreateObject<UdpClient> ();
-      s->SetRemote (server_to_gate_intf.GetAddress (0), port);
-      s->SetAttribute ("IsPoisson", BooleanValue (false));
-      s->SetAttribute ("MaxPackets", UintegerValue (numPackets));
-      s->SetAttribute ("Interval", TimeValue (interval));
-      s->SetAttribute ("PacketSize", UintegerValue (packetSize));
-      s->SetStartTime (Seconds (time_for_test_start - mini_application_time_pad_second));
-      s->SetStopTime (Seconds (time_for_test_end + mini_application_time_pad_second));
-      sta_nodes.Get (i)->AddApplication (s);
-    }
-
-  // Set up static routing
-  Ipv4StaticRoutingHelper ipv4RoutingHelper;
-  Ptr<Ipv4StaticRouting> gate_routing =
-      ipv4RoutingHelper.GetStaticRouting (gate_node.Get (0)->GetObject<Ipv4> ());
-  gate_routing->AddHostRouteTo (server_to_gate_intf.GetAddress (0),
-                                server_to_gate_intf.Get (0).second);
-
-  for (int i = 0; i < n_ap; ++i)
-    {
-      Ptr<Ipv4StaticRouting> ap_r =
-          ipv4RoutingHelper.GetStaticRouting (ap_nodes.Get (i)->GetObject<Ipv4> ());
-      ap_r->AddHostRouteTo (server_to_gate_intf.GetAddress (0), if_ap_to_gate.Get (i).second);
-      ap_r->AddHostRouteTo (server_to_gate_intf.GetAddress (1), if_ap_to_gate.Get (i).second);
-    }
-
-  for (int i = 0; i < n_sta; ++i)
-    {
-      Ptr<Ipv4StaticRouting> sta_r =
-          ipv4RoutingHelper.GetStaticRouting (sta_nodes.Get (i)->GetObject<Ipv4> ());
-      sta_r->AddHostRouteTo (server_to_gate_intf.GetAddress (0), staInterface.Get (i).second);
-      sta_r->AddHostRouteTo (server_to_gate_intf.GetAddress (1), staInterface.Get (i).second);
-    }
-
-  // Initialize ARP caches for STAs
-  for (int j = 0; j < n_sta; j++)
-    {
-      double max_gain = -std::numeric_limits<double>::infinity ();
-      uint32_t max_ap_ind = 0;
-      for (uint32_t i = 0; i < n_ap; i++)
-        {
-          double gain = lossModel->CalcRxPower (0, ap_nodes.Get (i)->GetObject<MobilityModel> (),
-                                                sta_nodes.Get (j)->GetObject<MobilityModel> ());
-          if (gain >= max_gain)
-            {
-              max_gain = gain;
-              max_ap_ind = i;
-            }
-        }
-      Mac48Address addr = Mac48Address::ConvertFrom (apDevice.Get (max_ap_ind)->GetAddress ());
-      Ptr<ArpCache> arp = CreateObject<ArpCache> ();
-      arp->SetAliveTimeout (Seconds (3600 * 24 * 365)); // Set ARP cache timeout
-      ArpCache::Entry *entry = arp->Add (server_to_gate_intf.GetAddress (0));
-      Ipv4Header ipv4Hdr;
-      ipv4Hdr.SetDestination (server_to_gate_intf.GetAddress (0));
-      Ptr<Packet> p = Create<Packet> (100);
-      entry->MarkWaitReply (ArpCache::Ipv4PayloadHeaderPair (p, ipv4Hdr));
-      entry->MarkAlive (addr);
-
-      Ptr<Ipv4L3Protocol> ip = sta_nodes.Get (j)->GetObject<Ipv4L3Protocol> ();
-      NS_ASSERT (ip != 0);
-      ObjectVectorValue interfaces;
-      ip->GetAttribute ("InterfaceList", interfaces);
-      for (ObjectVectorValue::Iterator p = interfaces.Begin (); p != interfaces.End (); p++)
-        {
-          Ptr<Ipv4Interface> ipIface = (*p).second->GetObject<Ipv4Interface> ();
-          ipIface->SetAttribute ("ArpCache", PointerValue (arp));
-        }
-      std::cout << "STA: " << j << ", arp: " << addr << std::endl;
-    }
-
+  double loss_step = 96.31379955930004;
   // Set up STA Modulation and Coding Scheme (MCS)
   for (uint32_t j = 0; j < n_sta; j++)
     {
-      double max_gain = -std::numeric_limits<double>::infinity ();
-      uint32_t max_ap_ind = 0;
-      for (uint32_t i = 0; i < n_ap; i++)
+      //Compute the noise floor
+      auto m = staDevice.Get (j);
+      auto w = m->GetObject<WifiNetDevice> ();
+      auto v = DynamicCast<WifiPhy> (w->GetPhy ());
+      uint16_t bw = v->GetChannelWidth ();
+      double nf = DbToRatio (RxNoiseFigure);
+      double BOLTZMANN = 1.3803e-23;
+      double Nt = BOLTZMANN * 290 * bw * 1e6;
+      double noiseFloor = nf * Nt;
+
+      WifiTxVector txVector;
+      Ptr<PpvErrorRateModel> ppv = CreateObject<PpvErrorRateModel> ();
+      double pw = v->GetTxPowerStart ();
+      auto bps_array = s_ofdmRatesBpsList[bw];
+      for (const auto &bps : bps_array)
         {
-          double gain = lossModel->CalcRxPower (0, ap_nodes.Get (i)->GetObject<MobilityModel> (),
-                                                sta_nodes.Get (j)->GetObject<MobilityModel> ());
-          if (gain >= max_gain)
-            {
-              max_gain = gain;
-              max_ap_ind = i;
-            }
+          auto mode = OfdmPhy::GetOfdmRate (bps, bw);
+          txVector.SetMode (mode);
+          txVector.SetChannelWidth (bw);
+          double ps = ppv->GetChunkSuccessRate (mode, txVector,
+                                                DbToRatio (pw - loss_step - WToDbm (noiseFloor)),
+                                                (packetSize + UDP_IP_WIFI_HEADER_SIZE) * 8);
+          uint64_t rate = OfdmPhy::GetDataRate (mode.GetUniqueName (), bw);
+          auto a = DynamicCast<StaWifiMac> (w->GetMac ());
+          a->GetWifiRemoteStationManager ()->SetAttribute ("DataMode",
+                                                           StringValue (mode.GetUniqueName ()));
+          auto preambleDuration_us =
+              v->CalculatePhyPreambleAndHeaderDuration (txVector).GetMicroSeconds ();
+          auto payloadsDuration_us = v->GetPayloadDuration ((packetSize + UDP_IP_WIFI_HEADER_SIZE),
+                                                            txVector, v->GetPhyBand ())
+                                         .GetMicroSeconds ();
+
+          std::cout << "STA:" << j << ", channel_width:" << txVector.GetChannelWidth ()
+                    << ", error:" << 1 - ps << ", Gain:" << loss_step
+                    << ", noiseFloor:" << WToDbm (noiseFloor)
+                    << ", snr:" << pw - loss_step - WToDbm (noiseFloor)
+                    << ", phyMode:" << mode.GetUniqueName ()
+                    << ", tx data duration:" << payloadsDuration_us
+                    << ", tx preamble duration:" << preambleDuration_us << std::endl;
         }
+      //164 bytes payload is approximately with 224 us with the lowest data rate 6mbps
+      //164 bytes payload is approximately with 28 us with the highest data rate 54mbps
+      //preamble and header duration is 20 us
+    }
+
+    for (uint32_t j = 0; j < n_sta; j++)
+    {
+      double max_gain = -loss_step;
 
       //Compute the noise floor
       auto m = staDevice.Get (j);
@@ -583,7 +442,7 @@ main (int argc, char *argv[])
           v->GetPayloadDuration ((packetSize + UDP_IP_WIFI_HEADER_SIZE), txVector, v->GetPhyBand ())
               .GetMicroSeconds ();
 
-      std::cout << "STA:" << j << "-" << "AP:" << max_ap_ind << ", Gain: " << max_gain
+      std::cout << "STA:" << j << "-" << ", Gain: " << max_gain
                 << "\n\t\t noiseFloor:" << WToDbm (noiseFloor)
                 << ", snr:" << pw + max_gain - WToDbm (noiseFloor)
                 << "\n\t\t phyMode:" << max_mode_name
@@ -593,141 +452,5 @@ main (int argc, char *argv[])
       a->SetAttribute ("twtguardtime",
                        TimeValue (MicroSeconds (preambleDuration_us + payloadsDuration_us)));
     }
-
-  // Manually associate STA-AP
-  for (uint32_t j = 0; j < n_sta; j++)
-    {
-      double max_gain = -std::numeric_limits<double>::infinity ();
-      uint32_t max_ap_ind = 0;
-      for (uint32_t i = 0; i < n_ap; i++)
-        {
-          double gain = lossModel->CalcRxPower (0, ap_nodes.Get (i)->GetObject<MobilityModel> (),
-                                                sta_nodes.Get (j)->GetObject<MobilityModel> ());
-          if (gain >= max_gain)
-            {
-              max_gain = gain;
-              max_ap_ind = i;
-            }
-        }
-      auto sd = staDevice.Get (j);
-      auto sd_w = sd->GetObject<WifiNetDevice> ();
-      auto s = DynamicCast<StaWifiMac> (sd_w->GetMac ());
-      auto s_addr = s->GetAddress ();
-
-      auto ad = apDevice.Get (max_ap_ind);
-      auto ad_w = ad->GetObject<WifiNetDevice> ();
-      auto a = DynamicCast<ApWifiMac> (ad_w->GetMac ());
-      auto a_addr = a->GetAddress ();
-
-      s->ManualAssoUpdateApInfo (a->ManualAssoGetProbRsp (), a->GetAddress (), a->GetBssid ());
-      auto assoReq = s->ManualAssoGetAssoReq ();
-      a->ManualAssoSetAssoReq (assoReq, s_addr);
-      auto assoRsp = a->ManualAssoGetAssoRsp (s_addr);
-      s->ManualAssoSetAssoRsp (assoRsp, a_addr);
-      a->ManualAssoGetAssoRspTxOk (s_addr);
-    }
-
-  // Set simulation stop time
-  Simulator::Stop (Seconds (time_for_test_end + 0.1));
-  std::cout << "Sim Start" << std::endl;
-
-  // Run the simulation
-  Simulator::Run ();
-
-  // Output simulation results for STAs
-  for (int i = 0; i < n_sta; ++i)
-    {
-      auto m = staDevice.Get (i);
-      auto w = m->GetObject<WifiNetDevice> ();
-      auto v = w->GetMac ();
-      std::cout << "STA: " << i << ", bssid: " << v->GetBssid () << std::endl;
-      std::cout << "STA: " << i << ", addr: " << v->GetAddress () << std::endl;
-      std::cout << "STA: " << i
-                << ", queue size: " << (v->GetTxop ())->GetWifiMacQueue ()->GetMaxSize ()
-                << std::endl;
-      std::cout << "STA: " << i << ", queue drop: "
-                << (v->GetTxop ())->GetWifiMacQueue ()->GetTotalDroppedPackets () << std::endl;
-      std::cout << "STA: " << i << ", queue srxp: "
-                << (v->GetTxop ())->GetWifiMacQueue ()->GetTotalReceivedPackets () << std::endl;
-      auto r = ServerApps.Get (i);
-      std::cout << "STA: " << i
-                << ", X-Y: " << sta_nodes.Get (i)->GetObject<MobilityModel> ()->GetPosition ().x
-                << "\t," << sta_nodes.Get (i)->GetObject<MobilityModel> ()->GetPosition ().y
-                << std::endl;
-      std::cout << "   packets received " << DynamicCast<UdpServer> (r)->GetReceived ()
-                << std::endl;
-      std::cout << "   bits received "
-                << DynamicCast<UdpServer> (r)->GetReceived () *
-                       (packetSize + UDP_IP_WIFI_HEADER_SIZE) * 8
-                << std::endl;
-      std::cout << "   aoi received " << DynamicCast<UdpServer> (r)->GetLastAoI_us () << std::endl;
-      std::cout << "   delay received " << DynamicCast<UdpServer> (r)->GetAvgDelay_us ()
-                << std::endl;
-      std::cout << "   interval received " << DynamicCast<UdpServer> (r)->GetAvgInterval_us ()
-                << std::endl;
-    }
-
-  // Output simulation results for APs
-  for (int i = 0; i < n_ap; ++i)
-    {
-      auto m = apDevice.Get (i);
-      auto w = m->GetObject<WifiNetDevice> ();
-      auto v = w->GetMac ();
-      std::cout << "AP: " << i << ", bssid: " << v->GetBssid () << std::endl;
-      std::cout << "AP: " << i
-                << ", queue size: " << (v->GetTxop ())->GetWifiMacQueue ()->GetMaxSize ()
-                << std::endl;
-      std::cout << "AP: " << i << ", queue drop: "
-                << (v->GetTxop ())->GetWifiMacQueue ()->GetTotalDroppedPackets () << std::endl;
-      std::cout << "AP: " << i << ", queue totp: "
-                << (v->GetTxop ())->GetWifiMacQueue ()->GetTotalReceivedPackets () << std::endl;
-    }
-
-  std::cout << "server ip: " << server_to_gate_intf.GetAddress (0) << std::endl;
-  std::cout << "server ip: " << server_to_gate_intf.GetAddress (1) << std::endl;
-
-  // Output propagation loss information if verbose
-  if (verbose)
-    {
-      for (uint32_t i = 0; i < n_ap; i++)
-        {
-          for (uint32_t j = 0; j < n_sta; j++)
-            {
-              auto A = ap_nodes.Get (i)->GetObject<MobilityModel> ();
-              auto B = sta_nodes.Get (j)->GetObject<MobilityModel> ();
-              std::cout << "loss_sta_ap: " << lossModel->CalcRxPower (0, B, A) << " "
-                        << lossModel->CalcRxPower (0, A, B) << std::endl;
-            }
-        }
-      for (uint32_t i = 0; i < n_sta; i++)
-        {
-          for (uint32_t j = 0; j < n_sta; j++)
-            {
-              auto A = sta_nodes.Get (i)->GetObject<MobilityModel> ();
-              auto B = sta_nodes.Get (j)->GetObject<MobilityModel> ();
-              std::cout << "loss_sta_sta: " << lossModel->CalcRxPower (0, B, A) << " "
-                        << lossModel->CalcRxPower (0, A, B) << std::endl;
-            }
-        }
-      for (uint32_t i = 0; i < n_ap; i++)
-        {
-          for (uint32_t j = 0; j < n_ap; j++)
-            {
-              auto A = ap_nodes.Get (i)->GetObject<MobilityModel> ();
-              auto B = ap_nodes.Get (j)->GetObject<MobilityModel> ();
-              std::cout << "loss_ap_ap: " << lossModel->CalcRxPower (0, B, A) << " "
-                        << lossModel->CalcRxPower (0, A, B) << std::endl;
-            }
-        }
-    }
-
-  // Clean up and end simulation
-  Simulator::Destroy ();
-
-  // Record simulation end time
-  std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now ();
-  NS_LOG_UNCOND ("sim end:" << std::chrono::time_point_cast<std::chrono::microseconds> (end)
-                                   .time_since_epoch ()
-                                   .count ());
   return 0;
 }
