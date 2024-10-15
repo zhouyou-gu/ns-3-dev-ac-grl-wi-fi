@@ -339,6 +339,8 @@ main (int argc, char *argv[])
       auto z = DynamicCast<StaWifiMac> (w->GetMac ());
       z->GetTxop ()->GetWifiMacQueue ()->SetMaxSize (QueueSize ("1p"));
       z->GetTxop ()->GetWifiMacQueue ()->SetMaxDelay(twtperiod);
+      z->GetTxop ()->SetMinCw(15);
+      z->GetTxop ()->SetMaxCw(127);
       // No need to scan the channel as we are manually associating the sta
       // z->SetAttribute ("scanningstartoffset", TimeValue (MilliSeconds (100) * (j + 1)));
     }
