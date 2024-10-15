@@ -336,8 +336,6 @@ main (int argc, char *argv[])
     {
       auto m = staDevice.Get (j);
       auto w = m->GetObject<WifiNetDevice> ();
-      // v->SetTxPowerStart (0.0);
-      // v->SetTxPowerEnd (0.0);
       auto z = DynamicCast<StaWifiMac> (w->GetMac ());
       z->GetTxop ()->GetWifiMacQueue ()->SetMaxSize (QueueSize ("1p"));
       z->GetTxop ()->GetWifiMacQueue ()->SetMaxDelay(twtperiod);
