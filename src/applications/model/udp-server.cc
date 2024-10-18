@@ -235,7 +235,7 @@ UdpServer::GetLastAoI_us()
   NS_LOG_FUNCTION (this);
   if (! m_is_stopped)
   {
-    NS_LOG_UNCOND("aoi should be calculated after the app is stopped");
+    NS_LOG_UNCOND("AoI should be calculated after the app is stopped");
   }
   return m_mean_aoi;
 }
@@ -269,7 +269,7 @@ UdpServer::GetAvgThroughput_pkt ()
   NS_LOG_FUNCTION (this);
   if (! m_is_stopped)
   {
-    NS_LOG_UNCOND("Interval should be calculated after the app is stopped");
+    NS_LOG_UNCOND("Throughput should be calculated after the app is stopped, now is " << Simulator::Now().GetMicroSeconds() << ", should stop at "<< m_stopTime.GetMicroSeconds());
   }
   return m_throughput;
 }
