@@ -147,7 +147,7 @@ main (int argc, char *argv[])
 {
   // Record simulation start time
   std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now ();
-  NS_LOG_UNCOND ("sim start:" << std::chrono::time_point_cast<std::chrono::microseconds> (begin)
+  NS_LOG_INFO ("sim start:" << std::chrono::time_point_cast<std::chrono::microseconds> (begin)
                                      .time_since_epoch ()
                                      .count ());
 
