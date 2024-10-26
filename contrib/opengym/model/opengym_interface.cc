@@ -167,7 +167,7 @@ OpenGymInterface::Init()
   Ptr<OpenGymSpace> actionSpace = GetActionSpace();
 
 //  NS_LOG_UNCOND("Simulation process id: " << ::getpid() << " (parent (waf shell) id: " << ::getppid() << ")");
-  NS_LOG_UNCOND("sim proc id: " << ::getpid() << " waiting for agt to connect on port: "<< connectAddr);
+  NS_LOG_INFO("sim proc id: " << ::getpid() << " waiting for agt to connect on port: "<< connectAddr);
 //  NS_LOG_UNCOND("Please start proper Python Gym Agent");
 
   ns3opengym::SimInitMsg simInitMsg;
